@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Winflex — Lámina PET</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23185FA5'/%3E%3Ctext x='32' y='47' font-family='Arial Black,Arial' font-weight='900' font-size='40' fill='white' text-anchor='middle'%3EW%3C/text%3E%3C/svg%3E">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#fff;--bg2:#f5f5f3;--bg3:#eeede8;
+  --text:#1a1a18;--text2:#5f5e5a;--text3:#888780;
+  --border:rgba(0,0,0,.10);--border2:rgba(0,0,0,.20);
+  --blue:#185FA5;--blue-dk:#0C447C;--blue-lt:#E6F1FB;--blue-xlt:#f0f7fd;
+  --green:#1D9E75;--green-dk:#0F6E56;--green-lt:#E1F5EE;
+  --red:#A32D2D;--red-lt:#FCEBEB;
+  --amber:#854F0B;--amber-lt:#FAEEDA;
+  --teal:#0F6E56;--teal-lt:#D5F0E5;
+  --r:8px;--rl:12px;
+  --sidebar:224px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;background:var(--bg3);color:var(--text);min-height:100vh}
+
+/* Layout */
+.sidebar{position:fixed;top:0;left:0;width:var(--sidebar);height:100vh;background:var(--bg);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100}
+.main{margin-left:var(--sidebar);min-height:100vh}
+.topbar{background:var(--bg);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:90;gap:12px}
+.content{padding:20px 24px}
+
+/* Sidebar */
+.logo{padding:16px 16px 12px;border-bottom:1px solid var(--border)}
+.logo-mark{font-size:17px;font-weight:700;color:var(--blue);letter-spacing:-.3px}
+.logo-sub{font-size:10px;color:var(--text3);margin-top:2px}
+.logo-badge{display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:3px;background:var(--teal-lt);color:var(--teal);margin-top:4px}
+.nav{padding:8px;flex:1;overflow-y:auto}
+.nav-sec{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;padding:10px 10px 4px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--r);cursor:pointer;font-size:13px;color:var(--text2);margin-bottom:2px;border:none;background:none;width:100%;text-align:left;transition:all .1s}
+.nav-item:hover{background:var(--bg2);color:var(--text)}
+.nav-item.active{background:var(--blue-lt);color:var(--blue);font-weight:600}
+.sidebar-foot{padding:12px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);line-height:1.6}
+
+/* Topbar */
+.page-heading{font-size:16px;font-weight:600}
+.page-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--r);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .1s;white-space:nowrap}
+.btn-blue{background:var(--blue);color:#fff}.btn-blue:hover{background:var(--blue-dk)}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{background:var(--green-dk)}
+.btn-ghost{background:var(--bg2);color:var(--text);border:1px solid var(--border2)}.btn-ghost:hover{background:var(--bg3)}
+.btn:active{transform:scale(.98)}
+
+/* Cards */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.kpi-card{background:var(--bg);border-radius:var(--rl);border:1px solid var(--border);padding:14px 16px}
+.kpi-val{font-size:22px;font-weight:600}
+.kpi-lbl{font-size:12px;color:var(--text2);margin-top:2px}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.card-head{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:14px;font-weight:600}
+
+/* Table */
+.twrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{padding:9px 12px;text-align:left;font-weight:500;font-size:11.5px;color:var(--text2);background:var(--bg2);border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
+thead th:hover{color:var(--text)}
+thead th.sorted{color:var(--blue)}
+tbody tr{border-bottom:1px solid var(--border);transition:background .07s;cursor:pointer}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#f0f7ff}
+tbody tr.sel{background:#deeeff!important}
+td{padding:8px 12px;vertical-align:middle}
+.tr{text-align:right;font-variant-numeric:tabular-nums}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px}
+.b-up{background:var(--green-lt);color:var(--green-dk)}
+.b-down{background:var(--red-lt);color:var(--red)}
+.b-neutral{background:var(--bg2);color:var(--text2)}
+.b-crystal{background:#E6F1FB;color:#0C447C}
+
+/* Bar */
+.bar-wrap{display:flex;align-items:center;gap:7px}
+.bar-bg{flex:1;background:var(--bg3);height:6px;border-radius:3px;overflow:hidden;min-width:50px}
+.bar-fill{height:100%;border-radius:3px;transition:width .3s}
+.bar-num{font-size:11px;font-variant-numeric:tabular-nums;min-width:38px;text-align:right;color:var(--text2)}
+
+/* Price input */
+.pinp{width:74px;background:var(--bg2);border:1px solid var(--border);border-radius:5px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:var(--text);padding:4px 7px;outline:none;transition:border-color .12s}
+.pinp:focus{border-color:var(--blue);background:var(--bg)}
+
+/* Params grid */
+.params-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:18px}
+.param-section{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.param-section-head{padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em}
+.param-section-body{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.param-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.param-lbl{font-size:12.5px;color:var(--text2);flex:1}
+.param-inp{width:110px;background:var(--bg2);border:1px solid var(--border2);border-radius:5px;text-align:right;font-size:13px;font-weight:600;color:var(--text);padding:5px 8px;outline:none;transition:border-color .12s}
+.param-inp:focus{border-color:var(--blue);background:var(--bg)}
+.param-unit{font-size:11px;color:var(--text3);width:80px}
+
+/* Cost breakdown */
+.cost-total-card{background:var(--blue);color:#fff;border-radius:var(--rl);padding:16px 20px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.cost-total-val{font-size:32px;font-weight:800;font-variant-numeric:tabular-nums}
+.cost-total-lbl{font-size:12px;opacity:.8;margin-top:2px}
+.cost-breakdown-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.cost-comp-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px}
+.cost-comp-val{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.cost-comp-lbl{font-size:11px;color:var(--text3);margin-top:2px;text-transform:uppercase;letter-spacing:.04em}
+.cost-comp-pct{font-size:11px;color:var(--text2);margin-top:3px}
+.cost-bar{width:100%;background:var(--bg3);height:4px;border-radius:2px;overflow:hidden;margin-top:6px}
+.cost-bar-fill{height:100%;border-radius:2px}
+
+/* Precios window */
+.price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.pcc{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.pcc-head{padding:12px 16px 10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start}
+.pcc-name{font-size:13px;font-weight:600}
+.pcc-hero{background:var(--blue);padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
+.pcc-hero-lbl{font-size:10px;font-weight:700;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.pcc-hero-inp{background:transparent;border:none;border-bottom:2px solid rgba(255,255,255,.5);color:#fff;font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;width:100px;text-align:right;outline:none;padding:0}
+.pcc-hero-inp:focus{border-bottom-color:#fff}
+.pcc-prev{padding:7px 16px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:12px;color:var(--text3);display:flex;justify-content:space-between}
+.pcc-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-bottom:1px solid var(--border)}
+.pcc-kpi{padding:7px 10px;text-align:center;border-right:1px solid var(--border)}
+.pcc-kpi:last-child{border-right:none}
+.pcc-kpi-val{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.pcc-kpi-lbl{font-size:9px;color:var(--text3);margin-top:1px;text-transform:uppercase;letter-spacing:.03em}
+.pcc-pcts{padding:10px 16px 14px}
+.pcc-pct-lbl{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.pct-btns{display:flex;gap:5px;flex-wrap:wrap}
+.pct-btn{font-size:11px;font-weight:600;padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);cursor:pointer;transition:all .1s}
+.pct-btn:hover{background:var(--bg3);color:var(--text)}
+.pct-btn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+/* Analysis */
+.analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.chart-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:16px}
+.chart-title{font-size:13px;font-weight:600;margin-bottom:12px}
+.rbar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.rbar-rank{font-size:11px;font-weight:700;color:var(--text3);width:16px;text-align:right;flex-shrink:0}
+.rbar-name{font-size:11.5px;color:var(--text2);width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
+.rbar-track{flex:1;background:var(--bg3);height:20px;border-radius:4px;overflow:hidden}
+.rbar-fill{height:100%;border-radius:4px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px}
+.rbar-val{font-size:11px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;white-space:nowrap}
+.stat-row{display:flex;justify-content:space-between;padding:5px 0;font-size:12.5px;border-bottom:1px solid var(--border)}
+.stat-row:last-child{border-bottom:none}
+.stat-lbl{color:var(--text2)}
+.stat-val{font-weight:600;font-variant-numeric:tabular-nums}
+
+/* Detalle */
+.det-wrap{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.det-head{background:linear-gradient(135deg,var(--blue-dk),var(--blue));padding:20px 24px;color:#fff}
+.det-head-n{font-size:20px;font-weight:800;margin-bottom:2px}
+.det-head-s{font-size:12px;opacity:.7}
+.det-kpis{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border)}
+.dk{padding:14px 18px;border-right:1px solid var(--border)}
+.dk:last-child{border-right:none}
+.dk-num{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.dk-lbl{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-top:3px}
+.det-body{padding:18px 20px}
+.det-sec-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;margin-top:14px}
+.drow{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12.5px;border-bottom:1px solid var(--border)}
+.drow:last-child{border-bottom:none}
+.drow-lbl{color:var(--text2)}
+.drow-val{font-weight:500;font-variant-numeric:tabular-nums}
+.det-price-sect{padding:16px 20px;border-top:1px solid var(--border);background:var(--bg2)}
+
+/* Pedidos */
+.ped-layout{display:grid;grid-template-columns:340px 1fr;gap:18px;align-items:start}
+.ped-form-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;position:sticky;top:80px}
+.ped-form-head{background:var(--blue);padding:13px 18px;color:#fff}
+.ped-form-head h3{font-size:14px;font-weight:700;margin:0}
+.ped-form-head p{font-size:11px;opacity:.7;margin-top:2px}
+.ped-form-body{padding:14px 18px}
+.ped-field{margin-bottom:11px}
+.ped-field label{display:block;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
+.ped-field select,.ped-field input{width:100%;padding:7px 10px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;background:var(--bg);color:var(--text);outline:none;transition:border-color .12s;font-family:inherit}
+.ped-field select:focus,.ped-field input:focus{border-color:var(--blue)}
+.ped-field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ped-submit{width:100%;padding:9px;background:var(--blue);color:#fff;border:none;border-radius:var(--r);font-size:13px;font-weight:700;cursor:pointer;transition:background .1s}
+.ped-submit:hover{background:var(--blue-dk)}
+.ped-right{display:flex;flex-direction:column;gap:14px}
+.ped-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.ped-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ped-report-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.ped-report-head{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600}
+.ped-hist-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.ped-hist-head{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.ped-hist-title{font-size:13px;font-weight:600}
+.rept-row{display:flex;justify-content:space-between;align-items:center;padding:6px 14px;border-bottom:1px solid var(--border);font-size:12.5px}
+.rept-row:last-child{border-bottom:none}
+.ped-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.ped-table thead th{padding:7px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--text3);background:var(--bg2);border-bottom:1px solid var(--border);white-space:nowrap}
+.ped-table tbody tr{border-bottom:1px solid var(--border)}
+.ped-table tbody tr:hover{background:var(--bg2)}
+.ped-table td{padding:6px 12px;vertical-align:middle}
+.ped-del{background:none;border:none;cursor:pointer;color:var(--text3);padding:2px 6px;border-radius:4px;font-size:12px;transition:all .1s}
+.ped-del:hover{color:var(--red);background:var(--red-lt)}
+.empty-ped{padding:32px;text-align:center;color:var(--text3);font-size:13px}
+.ped-expand{background:var(--bg2);border-top:1px solid var(--border);padding:14px 18px 16px}
+
+/* Agregar cliente */
+.nuevo-layout{display:grid;grid-template-columns:380px 1fr;gap:18px;align-items:start}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+.empty{text-align:center;padding:48px;color:var(--text3)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const {useState,useMemo,useCallback,useRef}=React;
+const C=React.createElement;
+
+/* ═══════════════ DATOS INICIALES ═══════════════════════════════════════ */
+const INIT_PARAMS={
+  // Base (rPET Cristal)
+  precioPreforma:1.25, pctPreforma:70,
+  precioScrap:0.90,    pctScrap:30,
+  merma:12,            recuperacion:10,
+  costoEnergia:0.20,   valorHoraMO:8500,
+  cantOperarios:2,     cargasSoc:50,
+  prodHora:190,        costoPallet:30000,
+  capPallet:500,       gastosVarios:0.04,
+  otros:0,             tipoCambio:1400,
+  // Virgen
+  precioPreformaVirgen:1.80,
+  // Masters (color)
+  pctMaster:2,           // % del kg de producto → extra cost = pctMaster/100 × masterPrecio
+  masterBlanco:8.45,     // USD/kg
+  masterNegro:5.75,      // USD/kg
+  masterAzulino:22.87,   // USD/kg
+  masterGris:0,          // USD/kg — sin precio aún
+  masterAntiblocking:0,  // USD/kg — sin precio aún
+};
+
+// Tipos disponibles
+const TIPOS={
+  cristal:     {lbl:'rPET Cristal',      color:'#185FA5', bg:'#E6F1FB', base:'cristal'},
+  virgen:      {lbl:'PET Virgen Ctal',   color:'#0F6E56', bg:'#E1F5EE', base:'virgen'},
+  blanco:      {lbl:'rPET Blanco',       color:'#6B4D8A', bg:'#F0E8F8', base:'cristal'},
+  blanco_ab:   {lbl:'rPET Blanco AB',    color:'#8A4D6B', bg:'#F8E8F0', base:'cristal'},
+  negro:       {lbl:'rPET Negro',        color:'#2C2C2A', bg:'#EAEAE8', base:'cristal'},
+  azulino:     {lbl:'rPET Azulino',      color:'#1B6A8C', bg:'#DFF1F8', base:'cristal'},
+  azulino_v:   {lbl:'PET Azulino Virgen',color:'#145A6E', bg:'#D5ECF4', base:'virgen'},
+  gris:        {lbl:'PET Gris Virgen',   color:'#5A5A58', bg:'#EBEBEA', base:'virgen'},
+};
+
+const INIT_CLIENTS=[
+  // ── rPET Cristal ──────────────────────────────────────────────────────
+  {id:0,  tipo:'cristal', name:'ALFERNET',        fullName:'ALFERNET (Michling Claudia)', pant:2.96, pventa:2.96},
+  {id:1,  tipo:'cristal', name:'ALGLO',           fullName:'ALGLO',                       pant:4.05, pventa:4.05},
+  {id:2,  tipo:'cristal', name:'BARIEL PACK',     fullName:'BARIEL PACK',                 pant:2.70, pventa:2.70},
+  {id:3,  tipo:'cristal', name:'BLIBOX',          fullName:'BLIBOX',                      pant:2.62, pventa:2.62},
+  {id:4,  tipo:'cristal', name:'BLIGRAF',         fullName:'BLIGRAF',                     pant:2.48, pventa:2.48},
+  {id:5,  tipo:'cristal', name:'COLGATE',         fullName:'COLGATE',                     pant:3.24, pventa:3.24},
+  {id:6,  tipo:'cristal', name:'COOPER',          fullName:'COOPER REPOSTERIA',           pant:3.17, pventa:3.17},
+  {id:7,  tipo:'cristal', name:'DARIO (SyB)',     fullName:'DARIO (SyB ENVASES)',         pant:3.35, pventa:3.35},
+  {id:8,  tipo:'cristal', name:'DECORATE',        fullName:'DECORATE',                    pant:2.86, pventa:2.86},
+  {id:9,  tipo:'cristal', name:'DIEGO GODOY',     fullName:'DIEGO GODOY',                 pant:2.52, pventa:2.52},
+  {id:10, tipo:'cristal', name:'EXPRESION GRAF.', fullName:'EXPRESION GRAFICA',           pant:3.65, pventa:3.65},
+  {id:11, tipo:'cristal', name:'JC PACKING',      fullName:'JC Packing (Cuzzilla)',       pant:3.25, pventa:3.25},
+  {id:12, tipo:'cristal', name:'LABOUREAU',       fullName:'LABOUREAU ROBERTO',           pant:3.23, pventa:3.23},
+  {id:13, tipo:'cristal', name:'LADAGA',          fullName:'LADAGA GUILLERMO',            pant:4.20, pventa:4.20},
+  {id:14, tipo:'cristal', name:'ROOJ BOX',        fullName:'ROOJ BOX',                    pant:4.05, pventa:4.05},
+  {id:15, tipo:'cristal', name:'SATELLITE',       fullName:'SATELLITE',                   pant:3.65, pventa:3.65},
+  {id:16, tipo:'cristal', name:'TRIGGER/GAPE',    fullName:'TRIGGER/GAPE',                pant:2.51, pventa:2.51},
+  // ── PET Virgen Cristal ────────────────────────────────────────────────
+  {id:20, tipo:'virgen',  name:'BLIGRAF',         fullName:'BLIGRAF',                     pant:2.81, pventa:3.23},
+  // ── rPET Blanco ───────────────────────────────────────────────────────
+  {id:30, tipo:'blanco',  name:'ARIAS (Corradi)', fullName:'ARIAS (Corradi Beatriz)',      pant:3.80, pventa:3.99},
+  {id:31, tipo:'blanco',  name:'BLIBOX',          fullName:'BLIBOX',                      pant:2.88, pventa:3.02},
+  {id:32, tipo:'blanco',  name:'BLIGRAF',         fullName:'BLIGRAF',                     pant:2.73, pventa:2.87},
+  {id:33, tipo:'blanco',  name:'DARIO (SyB)',     fullName:'DARIO (SyB ENVASES)',         pant:3.53, pventa:3.71},
+  {id:34, tipo:'blanco',  name:'TRIGGER/GAPE',    fullName:'TRIGGER/GAPE',                pant:2.77, pventa:2.91},
+  // ── rPET Blanco AB ────────────────────────────────────────────────────
+  {id:40, tipo:'blanco_ab',name:'TRIGGER/GAPE',   fullName:'TRIGGER/GAPE',                pant:2.93, pventa:3.08},
+  // ── rPET Negro ────────────────────────────────────────────────────────
+  {id:50, tipo:'negro',   name:'BLIBOX',          fullName:'BLIBOX',                      pant:2.82, pventa:2.96},
+  {id:51, tipo:'negro',   name:'BLIGRAF',         fullName:'BLIGRAF',                     pant:2.67, pventa:2.80},
+  {id:52, tipo:'negro',   name:'DIEGO GODOY',     fullName:'DIEGO GODOY',                 pant:2.70, pventa:2.84},
+  {id:53, tipo:'negro',   name:'TRIGGER/GAPE',    fullName:'TRIGGER/GAPE',                pant:2.71, pventa:2.85},
+  // ── rPET Azulino ──────────────────────────────────────────────────────
+  {id:60, tipo:'azulino', name:'BIOPROTECE',      fullName:'BIOPROTECE',                  pant:4.80, pventa:4.80},
+  {id:61, tipo:'azulino', name:'DARIO (SyB)',     fullName:'DARIO (SyB ENVASES)',         pant:4.80, pventa:4.80},
+  {id:62, tipo:'azulino', name:'INBIOMED',        fullName:'INBIOMED',                    pant:3.26, pventa:3.42},
+  // ── PET Azulino Virgen ────────────────────────────────────────────────
+  {id:70, tipo:'azulino_v',name:'SILMAG',         fullName:'SILMAG',                      pant:7.08, pventa:7.43},
+  // ── PET Gris Virgen ───────────────────────────────────────────────────
+  {id:80, tipo:'gris',    name:'SILMAG',          fullName:'SILMAG',                      pant:0,    pventa:0},
+];
+
+/* ═══════════════ MODELO DE COSTO ═══════════════════════════════════════ */
+function calcCostoBase(p, esVirgen){
+  const precP  = esVirgen ? p.precioPreformaVirgen : p.precioPreforma;
+  const mp_base = precP*(p.pctPreforma/100) + p.precioScrap*(p.pctScrap/100);
+  const mp_adj  = mp_base*(1 + p.merma/100 - p.recuperacion/100);
+  const mo      = p.valorHoraMO*p.cantOperarios*(1+p.cargasSoc/100)/p.prodHora/p.tipoCambio;
+  const pallet  = p.costoPallet/p.capPallet/p.tipoCambio;
+  const base    = mp_adj + p.costoEnergia + mo + p.gastosVarios + pallet + p.otros;
+  return {mp_adj, energia:p.costoEnergia, mo, gastosVarios:p.gastosVarios, pallet, otros:p.otros, base};
+}
+
+function calcCostoTipo(tipo, p){
+  const t = TIPOS[tipo]||TIPOS.cristal;
+  const esVirgen = t.base==='virgen';
+  const cb = calcCostoBase(p, esVirgen);
+  // Extra por master de color
+  const masters = {blanco:p.masterBlanco, blanco_ab:p.masterBlanco, negro:p.masterNegro, azulino:p.masterAzulino, azulino_v:p.masterAzulino, gris:p.masterGris};
+  const extras  = {blanco_ab: p.masterAntiblocking};
+  let extra = (masters[tipo]||0) * (p.pctMaster/100);
+  if(tipo==='blanco_ab') extra += (p.masterAntiblocking||0) * (p.pctMaster/100);
+  const total = cb.base + extra;
+  return {...cb, extra, total, mp_adj:cb.mp_adj, esVirgen};
+}
+
+function calcCosto(p){ return calcCostoTipo('cristal', p); }
+
+function calcCliente(c, p){
+  const costo = calcCostoTipo(c.tipo||'cristal', p);
+  const ganancia = c.pventa - costo.total;
+  const margen   = c.pventa>0 ? ganancia/c.pventa*100 : 0;
+  const markup   = costo.total>0 ? ganancia/costo.total*100 : 0;
+  const pctVsAnt = c.pant>0 ? (c.pventa/c.pant-1)*100 : 0;
+  return {ganancia, margen, markup, pctVsAnt, costoKg:costo.total, costoDetalle:costo};
+}
+
+/* ═══════════════ HELPERS ════════════════════════════════════════════════ */
+const cu  = n => (Math.ceil(Number(n)*100)/100).toFixed(2);
+const f2  = n => Number(n).toFixed(2);
+const f3  = n => Number(n).toFixed(3);
+const fp  = n => Number(n).toFixed(1)+'%';
+const fpu = n => (n>=0?'+':'')+fp(n);
+const today = ()=>new Date().toISOString().slice(0,10);
+const INIT_CLIENTS_IDS = new Set(INIT_CLIENTS.map(c=>c.id));
+
+/* ═══════════════ ICONS ══════════════════════════════════════════════════ */
+const Ico=({d,s=15,stroke='currentColor'})=>C('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke,strokeWidth:1.8,strokeLinecap:'round',strokeLinejoin:'round'},
+  d.split('|').map((p,i)=>C('path',{key:i,d:p})));
+
+/* ═══════════════ EXPORT FUNCTIONS ══════════════════════════════════════ */
+function exportResumen(clients, costo, params){
+  const XLS=window.XLSX, wb=XLS.utils.book_new();
+  const hoy=new Date().toLocaleDateString('es-AR');
+  const n_=(v,fmt='#,##0.00')=>({v,t:'n',z:fmt});
+  const p_=v=>({v:v/100,t:'n',z:'0.0%'});
+  const s_=v=>({v:String(v),t:'s'});
+
+  // Resumen
+  const r=[];
+  r.push([s_('WINFLEX S.A. — Lámina PET (todas las variantes)')]);
+  r.push([s_('Fecha: '+hoy)]);
+  r.push([s_('Costo total/kg: U$D '+cu(costo.total))]);
+  r.push([]);
+  r.push(['Cliente','Variante','Nombre completo','$ Anterior','$ Actual','Ganancia/kg','Margen %','Markup %','% Aumento'].map(s_));
+  [...clients].sort((a,b)=>b.margen-a.margen).forEach(c=>{
+    r.push([s_(c.name),s_(TIPOS[c.tipo||'cristal']?.lbl||''),s_(c.fullName),n_(c.pant),n_(c.pventa),n_(c.ganancia),p_(c.margen),p_(c.markup),p_(c.pctVsAnt)]);
+  });
+  r.push([]);
+  const avg=k=>clients.reduce((s,c)=>s+c[k],0)/clients.length;
+  r.push([s_('PROMEDIO'),s_(''),s_(''),n_(avg('pventa')),n_(avg('ganancia')),p_(avg('margen')),p_(avg('markup')),s_('')]);
+  const ws=XLS.utils.aoa_to_sheet(r);
+  ws['!cols']=[14,26,12,12,12,10,10,10].map(w=>({wch:w}));
+  XLS.utils.book_append_sheet(wb,ws,'Resumen');
+
+  // Costos
+  const d=[];
+  d.push([s_('DESGLOSE DE COSTO — rPET Cristal')]);
+  d.push([s_('Fecha: '+hoy)]);
+  d.push([]);
+  d.push(['Componente','USD/kg','% del total'].map(s_));
+  [
+    ['Materia Prima ajustada', costo.mp_adj],
+    ['Energía',                costo.energia],
+    ['Mano de obra',           costo.mo],
+    ['Gastos varios',          costo.gastosVarios],
+    ['Pallet / Transporte',    costo.pallet],
+    ['Otros',                  costo.otros],
+    ['TOTAL',                  costo.total],
+  ].forEach(([lbl,v])=>d.push([s_(lbl),n_(v),{v:v/costo.total,t:'n',z:'0.0%'}]));
+  d.push([]);
+  d.push(['Parámetro','Valor','Unidad'].map(s_));
+  [
+    ['Precio Preforma Molida', params.precioPreforma, 'USD/kg'],
+    ['% Preforma Molida',      params.pctPreforma, '%'],
+    ['Precio Scrap Interno',   params.precioScrap, 'USD/kg'],
+    ['% Scrap Interno',        params.pctScrap, '%'],
+    ['Merma',                  params.merma, '%'],
+    ['Recuperación Merma',     params.recuperacion, '%'],
+    ['Energía',                params.costoEnergia, 'USD/kg'],
+    ['Valor Hora MO',          params.valorHoraMO, 'ARS/hora'],
+    ['Cant. Operarios',        params.cantOperarios, ''],
+    ['Cargas Sociales',        params.cargasSoc, '%'],
+    ['Producción',             params.prodHora, 'kg/hora'],
+    ['Costo Pallet',           params.costoPallet, 'ARS'],
+    ['Capacidad Pallet',       params.capPallet, 'kg'],
+    ['Gastos Varios',          params.gastosVarios, 'USD/kg'],
+    ['Tipo de Cambio',         params.tipoCambio, 'ARS/USD'],
+  ].forEach(([l,v,u])=>d.push([s_(l),{v,t:'n'},s_(u)]));
+  const ws2=XLS.utils.aoa_to_sheet(d);
+  ws2['!cols']=[24,12,12].map(w=>({wch:w}));
+  XLS.utils.book_append_sheet(wb,ws2,'Costos');
+
+  XLS.writeFile(wb,`Winflex_PET_Cristal_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function exportListaPrecios(clients){
+  const XLS=window.XLSX, wb=XLS.utils.book_new();
+  const hoy=new Date().toLocaleDateString('es-AR');
+  const n_=(v)=>({v,t:'n',z:'#,##0.00'});
+  const s_=v=>({v:String(v),t:'s'});
+
+  // Lista simple — todos los clientes con precio, producto correcto por tipo
+  const rows=[];
+  rows.push([s_('WINFLEX S.A.')]);
+  rows.push([s_('Lista de Precios — Lámina PET')]);
+  rows.push([s_('Fecha: '+hoy)]);
+  rows.push([]);
+  rows.push(['Cliente','Variante','Precio USD/kg'].map(s_));
+  [...clients]
+    .filter(c=>c.pventa>0)
+    .sort((a,b)=>{
+      // Ordenar por tipo primero, luego por nombre
+      const ta=a.tipo||'cristal', tb=b.tipo||'cristal';
+      if(ta!==tb) return Object.keys(TIPOS).indexOf(ta)-Object.keys(TIPOS).indexOf(tb);
+      return a.fullName.localeCompare(b.fullName);
+    })
+    .forEach(c=>{
+      const lbl = TIPOS[c.tipo||'cristal']?.lbl || 'rPET Cristal';
+      rows.push([s_(c.fullName), s_('Lámina '+lbl), n_(c.pventa)]);
+    });
+
+  const ws=XLS.utils.aoa_to_sheet(rows);
+  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:2}},{s:{r:1,c:0},e:{r:1,c:2}},{s:{r:2,c:0},e:{r:2,c:2}}];
+  ws['!cols']=[28,24,14].map(w=>({wch:w}));
+  XLS.utils.book_append_sheet(wb,ws,'Lista de Precios');
+
+  // Hoja adicional: una por variante
+  Object.entries(TIPOS).forEach(([key,t])=>{
+    const grupo = [...clients].filter(c=>(c.tipo||'cristal')===key && c.pventa>0)
+                              .sort((a,b)=>a.fullName.localeCompare(b.fullName));
+    if(!grupo.length) return;
+    const r2=[];
+    r2.push([s_('WINFLEX S.A. — '+t.lbl)]);
+    r2.push([s_('Fecha: '+hoy)]);
+    r2.push([]);
+    r2.push(['Cliente','Precio USD/kg'].map(s_));
+    grupo.forEach(c=>r2.push([s_(c.fullName), n_(c.pventa)]));
+    const ws2=XLS.utils.aoa_to_sheet(r2);
+    ws2['!cols']=[30,14].map(w=>({wch:w}));
+    // Nombre de hoja acortado a 31 chars (límite Excel)
+    XLS.utils.book_append_sheet(wb,ws2,t.lbl.slice(0,31));
+  });
+
+  XLS.writeFile(wb,'Winflex_Lista_Precios_PET_'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+
+
+
+
+/* ═══════════════ JSONBIN SYNC ══════════════════════════════════════════ */
+const JBIN_KEY = '$2a$10$8p4t41BnTv.9Ls.4kFLhouDMqJGQEd5LQlBYEz8n1y6nH/3dFq27G';
+const JBIN_URL = 'https://api.jsonbin.io/v3';
+
+async function jbinLoad(binIdKey) {
+  const binId = localStorage.getItem(binIdKey);
+  if (!binId) return null;
+  try {
+    const res = await fetch(JBIN_URL+'/b/'+binId+'/latest', {
+      headers: {'X-Master-Key': JBIN_KEY},
+      signal: AbortSignal.timeout(10000)
+    });
+    if (!res.ok) return null;
+    const d = await res.json();
+    return d.record || null;
+  } catch(e) { return null; }
+}
+
+async function jbinSave(binIdKey, label, data) {
+  let binId = localStorage.getItem(binIdKey);
+  try {
+    if (!binId) {
+      const res = await fetch(JBIN_URL+'/b', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json','X-Master-Key':JBIN_KEY,'X-Bin-Name':label},
+        body: JSON.stringify(data),
+        signal: AbortSignal.timeout(10000)
+      });
+      if (!res.ok) return false;
+      const d = await res.json();
+      binId = d.metadata && d.metadata.id;
+      if (binId) localStorage.setItem(binIdKey, binId);
+      return !!binId;
+    } else {
+      const res = await fetch(JBIN_URL+'/b/'+binId, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json','X-Master-Key':JBIN_KEY},
+        body: JSON.stringify(data),
+        signal: AbortSignal.timeout(10000)
+      });
+      return res.ok;
+    }
+  } catch(e) { return false; }
+}
+
+/* ═══════════════ APP ════════════════════════════════════════════════════ */
+function App(){
+  const [params,setParams] = useState(()=>{
+    try{const s=localStorage.getItem('winflex_pet_params');return s?{...INIT_PARAMS,...JSON.parse(s)}:INIT_PARAMS;}catch{return INIT_PARAMS;}
+  });
+  const [clients,setClients] = useState(()=>{
+    try{const s=localStorage.getItem('winflex_pet_clients_v2');return s?JSON.parse(s):INIT_CLIENTS;}catch{return INIT_CLIENTS;}
+  });
+  const [pedidos,setPedidosState] = useState(()=>{try{return JSON.parse(localStorage.getItem('winflex_pet_pedidos')||'[]');}catch{return[];}});
+  const [view,setView] = useState('resumen');
+  const [syncStatus,setSyncStatus] = useState('idle'); // idle | saving | ok | error | loading
+  const JBIN_ID_KEY = 'winflex_pet_jbin_id';
+
+  // Guardar en localStorage automáticamente
+  React.useEffect(()=>{try{localStorage.setItem('winflex_pet_params',JSON.stringify(params));}catch{}},[params]);
+  React.useEffect(()=>{try{localStorage.setItem('winflex_pet_clients_v2',JSON.stringify(clients));}catch{}},[clients]);
+
+  // Cargar desde JSONBin al abrir
+  React.useEffect(()=>{
+    (async ()=>{
+      const binId = localStorage.getItem(JBIN_ID_KEY);
+      if (!binId) return;
+      setSyncStatus('loading');
+      const data = await jbinLoad(JBIN_ID_KEY);
+      if (data) {
+        if (data.params) { const p={...INIT_PARAMS,...data.params}; setParams(p); try{localStorage.setItem('winflex_pet_params',JSON.stringify(p));}catch{} }
+        if (data.clients && data.clients.length) { setClients(data.clients); try{localStorage.setItem('winflex_pet_clients_v2',JSON.stringify(data.clients));}catch{} }
+        if (data.pedidos) { setPedidosState(data.pedidos); try{localStorage.setItem('winflex_pet_pedidos',JSON.stringify(data.pedidos));}catch{} }
+        setSyncStatus('ok'); setTimeout(()=>setSyncStatus('idle'),4000);
+      } else { setSyncStatus('idle'); }
+    })();
+  },[]);
+
+  // GUARDAR CAMBIOS — botón manual
+  async function guardarCambios() {
+    setSyncStatus('saving');
+    const ok = await jbinSave(JBIN_ID_KEY, 'Winflex-PET', {params, clients, pedidos});
+    setSyncStatus(ok?'ok':'error');
+    setTimeout(()=>setSyncStatus('idle'), ok?4000:6000);
+  }
+
+  // ── Tipo de cambio BNA ──
+  const [tcStatus, setTcStatus] = React.useState('idle');
+  const [tcLastUpdate, setTcLastUpdate] = React.useState(
+    ()=>localStorage.getItem('winflex_pet_tc_fecha')||''
+  );
+
+  async function fetchTC() {
+    setTcStatus('loading');
+    const sources = [
+      'https://dolarapi.com/v1/dolares/oficial',
+      'https://dolar-bna.vercel.app/api/cotizacion',
+    ];
+    for (const url of sources) {
+      try {
+        const res = await fetch(url, {signal: AbortSignal.timeout(6000)});
+        if (!res.ok) continue;
+        const data = await res.json();
+        const venta = data.venta || data.sell;
+        if (venta && venta > 100) {
+          const tc = Math.round(venta);
+          setParams(p=>({...p, tipoCambio: tc}));
+          const fecha = new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+          setTcLastUpdate(fecha);
+          try{localStorage.setItem('winflex_pet_tc_fecha', fecha);}catch{}
+          setTcStatus('ok');
+          setTimeout(()=>setTcStatus('idle'), 4000);
+          return;
+        }
+      } catch {}
+    }
+    setTcStatus('error');
+    setTimeout(()=>setTcStatus('idle'), 4000);
+  }
+  const [sel,setSel]         = useState(null);
+  const [sortBy,setSortBy]   = useState('margen');
+  const [sortDir,setSortDir] = useState('desc');
+  const [filtTipo,setFiltTipo] = useState('');  // '' = todos
+
+  const tipoBadge = (tipo) => {
+    const t = TIPOS[tipo]||TIPOS.cristal;
+    return C('span',{style:{display:'inline-flex',alignItems:'center',fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:4,background:t.bg,color:t.color,whiteSpace:'nowrap'}},t.lbl);
+  };
+
+  const costo = useMemo(()=>calcCosto(params),[params]);  // cristal base (for stats)
+
+  const computed = useMemo(()=>clients.map(c=>({
+    ...c, ...calcCliente(c, params)
+  })),[clients,params]);
+
+  const tableSorted = useMemo(()=>[...computed]
+    .filter(c=>!filtTipo || c.tipo===filtTipo)
+    .sort((a,b)=>
+    sortDir==='desc'?b[sortBy]-a[sortBy]:a[sortBy]-b[sortBy]
+  ),[computed,sortBy,sortDir]);
+
+  function upParam(k,v){const n=parseFloat(v);if(!isNaN(n)&&n>=0){const np={...params,[k]:n};setParams(np);}}
+  function upPrice(id,v){const n=parseFloat(v);if(!isNaN(n)&&n>0){const nc=clients.map(c=>c.id===id?{...c,pventa:Math.ceil(n*100)/100}:c);setClients(nc);}}
+  function applyPct(id,pct){const nc=clients.map(c=>c.id!==id?c:{...c,pventa:Math.ceil(c.pant*(1+pct/100)*100)/100});setClients(nc);}
+  function applyAllPct(pct){const nc=clients.map(c=>({...c,pventa:Math.ceil(c.pant*(1+pct/100)*100)/100}));setClients(nc);}
+  function tgSort(col){if(sortBy===col)setSortDir(d=>d==='desc'?'asc':'desc');else{setSortBy(col);setSortDir('desc');}}
+  const SA=col=>sortBy===col?(sortDir==='desc'?' ↓':' ↑'):'';
+  const Th=({col,lbl,r})=>C('th',{className:sortBy===col?'sorted':'',style:r?{textAlign:'right'}:{},onClick:()=>tgSort(col)},lbl,SA(col));
+
+  const avgM = computed.reduce((s,c)=>s+c.margen,0)/computed.length;
+  const maxM = Math.max(...computed.map(c=>c.margen));
+  const maxG = Math.max(...computed.map(c=>c.ganancia));
+  const selData = sel!==null ? computed.find(c=>c.id===sel) : null;
+
+  /* ── PEDIDOS state ── */
+  const [expandido,setExpandido]=useState(null);
+  const [entregaForm,setEntregaForm]=useState({});
+  const [pedForm,setPedForm]=useState({clienteId:'',fecha:today(),kg:'',precioUSD:'',nroOC:'',nota:''});
+  const [pedFiltCliente,setPedFiltCliente]=useState('');
+  const [pedFiltMes,setPedFiltMes]=useState('');
+  const [pedFiltEstado,setPedFiltEstado]=useState('');
+
+  function savePedidos(arr){setPedidosState(arr);try{localStorage.setItem('winflex_pet_pedidos',JSON.stringify(arr));}catch{}}
+  function getEstado(p){const e=(p.entregas||[]).reduce((s,x)=>s+x.kg,0);if(e===0)return'pendiente';if(e>=p.kg)return'completo';return'parcial';}
+
+  function addPedido(){
+    if(!pedForm.clienteId||!pedForm.kg||!pedForm.precioUSD)return;
+    const cl=computed.find(c=>c.id===Number(pedForm.clienteId));if(!cl)return;
+    const kg=parseFloat(pedForm.kg),precio=parseFloat(pedForm.precioUSD);
+    const ganKg=parseFloat(cu(precio-cl.costoKg));
+    savePedidos([{
+      id:Date.now(),fecha:pedForm.fecha,clienteId:cl.id,nombre:cl.fullName,
+      kg,precio,costo:parseFloat(cu(cl.costoKg)),gananciaKg:ganKg,
+      gananciaTotal:parseFloat(cu(ganKg*kg)),margen:parseFloat((precio>0?(precio-cl.costoKg)/precio*100:0).toFixed(1)),
+      montoTotal:parseFloat(cu(precio*kg)),nroOC:pedForm.nroOC,nota:pedForm.nota,entregas:[],
+    },...pedidos]);
+    setPedForm(f=>({...f,kg:'',precioUSD:'',nroOC:'',nota:''}));
+  }
+  function delPedido(id){savePedidos(pedidos.filter(p=>p.id!==id));}
+  function addEntrega(pedId){
+    const ef=entregaForm[pedId]||{};
+    if(!ef.kg||parseFloat(ef.kg)<=0)return;
+    savePedidos(pedidos.map(p=>{
+      if(p.id!==pedId)return p;
+      const entregadas=(p.entregas||[]).reduce((s,e)=>s+e.kg,0);
+      const disponible=p.kg-entregadas;
+      const kg=Math.min(parseFloat(ef.kg),disponible);
+      if(kg<=0)return p;
+      return{...p,entregas:[...(p.entregas||[]),{id:Date.now(),fecha:ef.fecha||today(),kg,nota:ef.nota||''}]};
+    }));
+    setEntregaForm(f=>({...f,[pedId]:{fecha:today(),kg:'',nota:''}}));
+  }
+  function delEntrega(pedId,entId){savePedidos(pedidos.map(p=>p.id!==pedId?p:{...p,entregas:(p.entregas||[]).filter(e=>e.id!==entId)}));}
+
+  function exportPedidosXLS(){
+    const XLS=window.XLSX,wb=XLS.utils.book_new();
+    const hoy=new Date().toLocaleDateString('es-AR');
+    const n_=(v,fmt='#,##0.00')=>({v,t:'n',z:fmt});
+    const s_=v=>({v:String(v),t:'s'});
+    const rows=[[s_('WINFLEX — Pedidos rPET Cristal')],[s_('Exportado: '+hoy)],[],
+      ['Fecha','OC','Cliente','Kg ped.','Kg entr.','Kg pend.','Estado','Precio/kg','Costo/kg','Gan/kg','Monto','Margen%'].map(s_)];
+    pedidos.forEach(p=>{
+      const entr=(p.entregas||[]).reduce((s,e)=>s+e.kg,0);
+      rows.push([s_(p.fecha),s_(p.nroOC||''),s_(p.nombre),n_(p.kg,'#,##0'),n_(entr,'#,##0'),n_(p.kg-entr,'#,##0'),s_(getEstado(p)),n_(p.precio),n_(p.costo),n_(p.gananciaKg),n_(p.montoTotal),{v:p.margen/100,t:'n',z:'0.0%'}]);
+      (p.entregas||[]).forEach(e=>rows.push([s_('  └ '+e.fecha),s_(''),s_(''),s_(''),n_(e.kg,'#,##0'),s_(''),s_(e.nota||''),s_(''),s_(''),s_(''),s_(''),s_('')]));
+    });
+    const ws=XLS.utils.aoa_to_sheet(rows);
+    ws['!cols']=[10,10,22,8,8,8,10,10,10,10,11,9].map(w=>({wch:w}));
+    XLS.utils.book_append_sheet(wb,ws,'Pedidos');
+    const byC={};
+    pedidos.forEach(p=>{if(!byC[p.nombre])byC[p.nombre]={nombre:p.nombre,cant:0,kg:0,monto:0,ganancia:0};byC[p.nombre].cant++;byC[p.nombre].kg+=p.kg;byC[p.nombre].monto+=p.montoTotal;byC[p.nombre].ganancia+=p.gananciaTotal;});
+    const r2=[[s_('Por cliente')],[],[],['Cliente','Ped.','Kg','Monto','Ganancia','Precio prom.','Margen prom.'].map(s_)];
+    Object.values(byC).sort((a,b)=>b.monto-a.monto).forEach(d=>r2.push([s_(d.nombre),{v:d.cant,t:'n',z:'0'},n_(d.kg,'#,##0'),n_(d.monto),n_(d.ganancia),n_(d.monto/d.kg),{v:d.ganancia/d.monto,t:'n',z:'0.0%'}]));
+    const ws2=XLS.utils.aoa_to_sheet(r2);ws2['!cols']=[22,6,10,11,11,11,10].map(w=>({wch:w}));
+    XLS.utils.book_append_sheet(wb,ws2,'Por cliente');
+    XLS.writeFile(wb,'Winflex_Pedidos_PET_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  }
+
+  const pedFiltrados=pedidos.filter(p=>{
+    if(pedFiltCliente&&p.nombre!==pedFiltCliente)return false;
+    if(pedFiltMes&&!p.fecha.startsWith(pedFiltMes))return false;
+    if(pedFiltEstado&&getEstado(p)!==pedFiltEstado)return false;
+    return true;
+  });
+  const pedStats=useMemo(()=>{
+    if(!pedidos.length)return null;
+    return{
+      cnt:pedidos.length,
+      pendientes:pedidos.filter(p=>getEstado(p)!=='completo').length,
+      totalMonto:pedidos.reduce((s,p)=>s+p.montoTotal,0),
+      avgMargen:pedidos.reduce((s,p)=>s+p.margen,0)/pedidos.length,
+    };
+  },[pedidos]);
+  const rankClientes=useMemo(()=>{
+    const m={};pedidos.forEach(p=>{if(!m[p.nombre])m[p.nombre]={nombre:p.nombre,cant:0,kg:0,monto:0,ganancia:0};m[p.nombre].cant++;m[p.nombre].kg+=p.kg;m[p.nombre].monto+=p.montoTotal;m[p.nombre].ganancia+=p.gananciaTotal;});
+    return Object.values(m).sort((a,b)=>b.monto-a.monto);
+  },[pedidos]);
+  const mesesDisponibles=[...new Set(pedidos.map(p=>p.fecha.slice(0,7)))].sort().reverse();
+  const clientesDisponibles=[...new Set(pedidos.map(p=>p.nombre))].sort();
+
+  const estBadge=est=>{
+    if(est==='completo')return C('span',{className:'badge b-up',style:{fontSize:10}},'✓ Completo');
+    if(est==='parcial') return C('span',{className:'badge',style:{fontSize:10,background:'var(--amber-lt)',color:'var(--amber)'}},'↗ Parcial');
+    return C('span',{className:'badge b-neutral',style:{fontSize:10}},'○ Pendiente');
+  };
+
+  /* ── AGREGAR CLIENTE state ── */
+  const [nuevoForm,setNuevoForm]=useState({name:'',tipo:'cristal',pant:'',pventa:''});
+  const [nuevoMsg,setNuevoMsg]=useState('');
+  function saveNuevo(){
+    if(!nuevoForm.name||!nuevoForm.pventa){setNuevoMsg('⚠ Nombre y precio de venta son obligatorios');return;}
+    const pv=Math.ceil(parseFloat(nuevoForm.pventa)*100)/100;
+    const pa=nuevoForm.pant?Math.ceil(parseFloat(nuevoForm.pant)*100)/100:pv;
+    const newId=Math.max(...clients.map(c=>c.id))+1;
+    const nc=[...clients,{id:newId,tipo:nuevoForm.tipo||'cristal',name:nuevoForm.name.trim(),fullName:nuevoForm.name.trim(),pant:pa,pventa:pv}]; setClients(nc);
+    setNuevoForm({name:'',pant:'',pventa:''});
+    setNuevoMsg('✓ Cliente guardado');setTimeout(()=>setNuevoMsg(''),3000);
+  }
+  function removeClient(id){
+    if(INIT_CLIENTS_IDS.has(id)){setNuevoMsg('⚠ Los clientes originales no se pueden eliminar');setTimeout(()=>setNuevoMsg(''),3000);return;}
+    const nc2=clients.filter(c=>c.id!==id);setClients(nc2);
+  }
+
+  /* ══════════════════════════ VIEWS ════════════════════════════════════ */
+
+  /* ── RESUMEN ── */
+  const ViewResumen=C('div',null,
+    C('div',{className:'kpi-row'},
+      [
+        {val:'U$D '+cu(costo.total),  lbl:'Costo rPET Cristal',  sub:'base sin master'},
+        {val:fp(avgM),                lbl:'Margen promedio',      sub:tableSorted.length+' clientes visibles'},
+        {val:'U$D '+cu(Math.max(...computed.filter(c=>c.pventa>0).map(c=>c.ganancia))), lbl:'Mayor ganancia/kg', sub:[...computed].filter(c=>c.pventa>0).sort((a,b)=>b.ganancia-a.ganancia)[0]?.name||''},
+        {val:clients.length,          lbl:'Clientes / variantes', sub:Object.keys(TIPOS).length+' tipos de producto'},
+      ].map(({val,lbl,sub})=>C('div',{key:lbl,className:'kpi-card'},C('div',{className:'kpi-val'},val),C('div',{className:'kpi-lbl'},lbl),C('div',{className:'kpi-sub'},sub)))
+    ),
+    // Filtro por tipo
+    C('div',{style:{display:'flex',gap:6,marginBottom:12,flexWrap:'wrap'}},
+      C('button',{style:{padding:'5px 12px',borderRadius:5,border:'1px solid var(--border2)',fontSize:12,fontWeight:600,cursor:'pointer',background:filtTipo===''?'var(--blue)':'var(--bg)',color:filtTipo===''?'#fff':'var(--text2)'},onClick:()=>setFiltTipo('')},'Todos ('+computed.length+')'),
+      Object.entries(TIPOS).map(([k,t])=>{
+        const cnt=computed.filter(c=>c.tipo===k).length;
+        if(!cnt) return null;
+        return C('button',{key:k,style:{padding:'5px 12px',borderRadius:5,border:'1px solid var(--border2)',fontSize:12,fontWeight:600,cursor:'pointer',background:filtTipo===k?t.color:'var(--bg)',color:filtTipo===k?'#fff':t.color},onClick:()=>setFiltTipo(filtTipo===k?'':k)},t.lbl+' ('+cnt+')');
+      })
+    ),
+    C('div',{className:'card'},
+      C('div',{className:'card-head'},
+        C('span',{className:'card-title'},filtTipo?(TIPOS[filtTipo]?.lbl||''):'Todos los productos'),
+        C('span',{style:{fontSize:11,color:'var(--text3)'}},'Clic en fila → detalle · Precio editable')
+      ),
+      C('div',{className:'twrap'},
+        C('table',null,
+          C('thead',null,C('tr',null,
+            C('th',null,'Cliente'),
+            C('th',null,'Variante'),
+            C(Th,{col:'costoKg',lbl:'Costo/kg',r:true}),
+            C('th',{style:{textAlign:'right'}},'$ Venta'),
+            C(Th,{col:'ganancia',lbl:'Ganancia',r:true}),
+            C(Th,{col:'margen',lbl:'Margen %'}),
+            C(Th,{col:'pctVsAnt',lbl:'vs Ant.',r:true}),
+          )),
+          C('tbody',null,tableSorted.map(c=>
+            C('tr',{key:c.id,className:sel===c.id?'sel':'',onClick:()=>{setSel(c.id);setView('detalle');}},
+              C('td',null,C('span',{style:{fontWeight:600}},c.fullName)),
+              C('td',null, tipoBadge(c.tipo||'cristal')),
+              C('td',{className:'tr'},'U$D '+cu(c.costoKg)),
+              C('td',{className:'tr'},
+                c.pventa>0
+                  ? C('input',{className:'pinp',type:'number',step:'0.01',value:c.pventa,onClick:e=>e.stopPropagation(),onChange:e=>upPrice(c.id,e.target.value)})
+                  : C('span',{style:{fontSize:11,color:'var(--text3)'}}, 'Sin precio')
+              ),
+              C('td',{className:'tr',style:{color:c.ganancia>0?'var(--green-dk)':'var(--red)',fontWeight:600}}, c.pventa>0?'U$D '+cu(c.ganancia):'—'),
+              C('td',null, c.pventa>0?C('div',{className:'bar-wrap'},
+                C('div',{className:'bar-bg'},C('div',{className:'bar-fill',style:{width:Math.max(0,c.margen)/75*100+'%',background:'var(--green)'}})),
+                C('span',{className:'bar-num'},fp(c.margen))
+              ):C('span',{style:{color:'var(--text3)',fontSize:11}},'—')),
+              C('td',{className:'tr'},c.pventa>0?C('span',{className:'badge '+(c.pctVsAnt>0?'b-up':c.pctVsAnt<0?'b-down':'b-neutral')},fpu(c.pctVsAnt)):'—')
+            )
+          ))
+        )
+      )
+    )
+  );
+
+  /* ── PRECIOS ── */
+  const preciosFiltrados = computed.filter(c=>!filtTipo||c.tipo===filtTipo).filter(c=>c.pventa>0);
+  const ViewPrecios=C('div',null,
+    C('div',{className:'card',style:{marginBottom:14,padding:'12px 18px'}},
+      C('div',{style:{display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'}},
+        C('span',{style:{fontSize:13,fontWeight:600,color:'var(--text2)'}},'Aplicar a TODOS:'),
+        C('div',{style:{display:'flex',gap:6}},
+          [5,8,10,12,15].map(pct=>C('button',{key:pct,className:'pct-btn',onClick:()=>applyAllPct(pct)},'+'+pct+'%'))
+        ),
+        C('span',{style:{fontSize:11,color:'var(--text3)'}},'sobre precio anterior'),
+        C('div',{style:{marginLeft:'auto',display:'flex',gap:8}},
+          C('button',{className:'btn btn-green',onClick:()=>exportListaPrecios(computed)},
+            C(Ico,{d:'M12 3v13|M7 11l5 5 5-5|M3 20h18',s:14}), 'Lista de precios'
+          )
+        )
+      )
+    ),
+    // Filtro tipo
+    C('div',{style:{display:'flex',gap:6,marginBottom:12,flexWrap:'wrap'}},
+      C('button',{style:{padding:'5px 12px',borderRadius:5,border:'1px solid var(--border2)',fontSize:12,fontWeight:600,cursor:'pointer',background:filtTipo===''?'var(--blue)':'var(--bg)',color:filtTipo===''?'#fff':'var(--text2)'},onClick:()=>setFiltTipo('')},'Todos ('+computed.filter(c=>c.pventa>0).length+')'),
+      Object.entries(TIPOS).map(([k,t])=>{
+        const cnt=computed.filter(c=>c.tipo===k&&c.pventa>0).length;
+        if(!cnt) return null;
+        return C('button',{key:k,style:{padding:'5px 12px',borderRadius:5,border:'1px solid var(--border2)',fontSize:12,fontWeight:600,cursor:'pointer',background:filtTipo===k?t.color:'var(--bg)',color:filtTipo===k?'#fff':t.color},onClick:()=>setFiltTipo(filtTipo===k?'':k)},t.lbl+' ('+cnt+')');
+      })
+    ),
+    C('div',{className:'price-grid'},
+      preciosFiltrados.map(c=>{
+        const t = TIPOS[c.tipo||'cristal']||TIPOS.cristal;
+        const pctAct=c.pant>0?Math.round((c.pventa/c.pant-1)*100*10)/10:0;
+        const mc=c.margen>50?'var(--green-dk)':c.margen>40?'var(--green)':c.margen>30?'var(--amber)':'var(--red)';
+        return C('div',{key:c.id,className:'pcc'},
+          C('div',{className:'pcc-head'},
+            C('div',null,
+              C('div',{className:'pcc-name'},c.fullName),
+              C('div',{style:{marginTop:3}}, tipoBadge(c.tipo||'cristal'))
+            ),
+            C('span',{className:'badge '+(c.pctVsAnt>0?'b-up':c.pctVsAnt<0?'b-down':'b-neutral'),style:{fontSize:11}},fpu(c.pctVsAnt))
+          ),
+          C('div',{className:'pcc-hero',style:{background:t.color}},
+            C('div',null,
+              C('div',{className:'pcc-hero-lbl'},'Precio actual (USD/kg)'),
+              C('input',{className:'pcc-hero-inp',type:'number',step:'0.01',value:c.pventa,onChange:e=>upPrice(c.id,e.target.value)})
+            ),
+            C('div',{style:{textAlign:'right'}},
+              C('div',{style:{fontSize:10,color:'rgba(255,255,255,.6)',marginBottom:2}},'Margen neto'),
+              C('div',{style:{fontSize:22,fontWeight:800,color:'#fff'}},fp(c.margen))
+            )
+          ),
+          C('div',{className:'pcc-prev'},
+            C('span',null,'Anterior: ',C('strong',null,'U$D '+cu(c.pant))),
+            C('span',null,'Ganancia: ',C('strong',{style:{color:c.ganancia>0?'var(--green-dk)':'var(--red)'}},'U$D '+cu(c.ganancia)))
+          ),
+          C('div',{className:'pcc-kpis'},
+            C('div',{className:'pcc-kpi'},C('div',{className:'pcc-kpi-val'},'U$D '+cu(c.costoKg)),C('div',{className:'pcc-kpi-lbl'},'Costo/kg')),
+            C('div',{className:'pcc-kpi'},C('div',{className:'pcc-kpi-val',style:{color:mc}},fp(c.margen)),C('div',{className:'pcc-kpi-lbl'},'Margen')),
+            C('div',{className:'pcc-kpi'},C('div',{className:'pcc-kpi-val',style:{color:'var(--text2)',fontSize:13}},fp(c.markup)),C('div',{className:'pcc-kpi-lbl'},'Markup'))
+          ),
+          C('div',{className:'pcc-pcts'},
+            C('div',{className:'pcc-pct-lbl'},'Aumento sobre anterior'),
+            C('div',{className:'pct-btns'},
+              [5,8,10,12,15,20].map(pct=>C('button',{key:pct,className:'pct-btn'+(Math.abs(pctAct-pct)<0.2?' on':''),onClick:()=>applyPct(c.id,pct)},'+'+pct+'%'))
+            )
+          )
+        );
+      })
+    )
+  );
+
+  /* ── COSTOS ── */
+  const pctOf=v=>v/costo.total*100;
+  const costComps=[
+    {lbl:'Materia Prima',     val:costo.mp_adj,       color:'#185FA5', detail:'Preforma + Scrap, ajustado por merma'},
+    {lbl:'Energía',           val:costo.energia,      color:'#854F0B', detail:'Costo directo por kg producido'},
+    {lbl:'Mano de Obra',      val:costo.mo,            color:'#1D9E75', detail:'Operarios + cargas sociales'},
+    {lbl:'Gastos Varios',     val:costo.gastosVarios, color:'#639922', detail:'Gastos generales'},
+    {lbl:'Pallet / Transp.',  val:costo.pallet,       color:'#888780', detail:'Costo de paletizado y transporte'},
+  ];
+  if(costo.otros>0) costComps.push({lbl:'Otros',val:costo.otros,color:'#B4B2A9',detail:''});
+
+  const ViewCostos=C('div',null,
+    C('div',{className:'cost-total-card'},
+      C('div',null,
+        C('div',{className:'cost-total-lbl'},'Costo base rPET Cristal / kg (referencia)'),
+        C('div',{className:'cost-total-val'},'U$D '+cu(costo.total)),
+      ),
+      C('div',{style:{textAlign:'right'}},
+        C('div',{style:{fontSize:11,opacity:.7,marginBottom:4}},'Componentes'),
+        C('div',{style:{display:'flex',gap:2,justifyContent:'flex-end'}},
+          costComps.map(x=>C('div',{key:x.lbl,title:x.lbl+': '+fp(pctOf(x.val)),style:{background:x.color,height:8,width:pctOf(x.val)*1.2+'px',borderRadius:2,opacity:.85}}))
+        )
+      )
+    ),
+    C('div',{className:'cost-breakdown-grid'},
+      costComps.map(x=>C('div',{key:x.lbl,className:'cost-comp-card'},
+        C('div',{className:'cost-comp-val'},'U$D '+cu(x.val)),
+        C('div',{className:'cost-comp-lbl'},x.lbl),
+        C('div',{className:'cost-comp-pct'},fp(pctOf(x.val))+' del total'),
+        C('div',{style:{fontSize:10,color:'var(--text3)',marginTop:2}},x.detail),
+        C('div',{className:'cost-bar'},C('div',{className:'cost-bar-fill',style:{width:pctOf(x.val)+'%',background:x.color}}))
+      ))
+    ),
+    C('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}},
+      // Materia Prima detallada
+      C('div',{className:'card'},
+        C('div',{className:'card-head'},C('span',{className:'card-title'},'Detalle Materia Prima')),
+        C('div',{style:{padding:'14px 18px'}},
+          [
+            ['Precio Preforma Molida','U$D '+cu(params.precioPreforma)+'/kg'],
+            ['% Preforma Molida',     fp(params.pctPreforma)],
+            ['Precio Scrap Interno',  'U$D '+cu(params.precioScrap)+'/kg'],
+            ['% Scrap Interno',       fp(params.pctScrap)],
+            ['MP base (ponderada)',   'U$D '+cu(params.precioPreforma*params.pctPreforma/100+params.precioScrap*params.pctScrap/100)],
+            ['Merma proceso',         fp(params.merma)],
+            ['Recuperación merma',    fp(params.recuperacion)],
+            ['→ MP ajustada',        'U$D '+cu(costo.mp_adj)],
+          ].map(([l,v])=>C('div',{key:l,className:'drow'},C('span',{className:'drow-lbl'},l),C('span',{className:'drow-val'},v)))
+        )
+      ),
+      // MO + Producción
+      C('div',{className:'card'},
+        C('div',{className:'card-head'},C('span',{className:'card-title'},'Mano de Obra y Producción')),
+        C('div',{style:{padding:'14px 18px'}},
+          [
+            ['Valor hora MO','$ '+params.valorHoraMO.toLocaleString('es-AR')+' ARS/h'],
+            ['Cant. operarios',params.cantOperarios],
+            ['Cargas sociales',fp(params.cargasSoc)],
+            ['Producción',params.prodHora+' kg/hora'],
+            ['Tipo de cambio','$ '+params.tipoCambio.toLocaleString('es-AR')+' ARS/USD'],
+            ['→ MO por kg','U$D '+f3(costo.mo)],
+            ['Costo pallet','$ '+params.costoPallet.toLocaleString('es-AR')+' ARS'],
+            ['Capacidad pallet',params.capPallet+' kg'],
+            ['→ Pallet por kg','U$D '+f3(costo.pallet)],
+          ].map(([l,v])=>C('div',{key:l,className:'drow'},C('span',{className:'drow-lbl'},l),C('span',{className:'drow-val'},v)))
+        )
+      )
+    )
+  );
+
+  /* ── ANÁLISIS ── */
+  const ViewAnalisis=C('div',null,
+    C('div',{className:'analysis-grid'},
+      C('div',{className:'chart-card'},
+        C('div',{className:'chart-title'},'Ranking por margen neto'),
+        [...computed].sort((a,b)=>b.margen-a.margen).map((c,i)=>
+          C('div',{key:c.id,className:'rbar-row'},
+            C('span',{className:'rbar-rank'},i+1),
+            C('span',{className:'rbar-name',title:c.fullName},c.fullName),
+            C('div',{className:'rbar-track'},
+              C('div',{className:'rbar-fill',style:{width:c.margen/maxM*100+'%',background:['#0F6E56','#1D9E75','#27500A','#3B6D11','#639922','#97C459'][Math.min(i,5)]}},
+                C('span',{className:'rbar-val'},fp(c.margen))
+              )
+            )
+          )
+        )
+      ),
+      C('div',{className:'chart-card'},
+        C('div',{className:'chart-title'},'Ranking por ganancia (U$D/kg)'),
+        [...computed].sort((a,b)=>b.ganancia-a.ganancia).map((c,i)=>
+          C('div',{key:c.id,className:'rbar-row'},
+            C('span',{className:'rbar-rank'},i+1),
+            C('span',{className:'rbar-name',title:c.fullName},c.fullName),
+            C('div',{className:'rbar-track'},
+              C('div',{className:'rbar-fill',style:{width:c.ganancia/maxG*100+'%',background:['#042C53','#0C447C','#185FA5','#378ADD','#85B7EB'][Math.min(i,4)]}},
+                C('span',{className:'rbar-val'},'U$D '+cu(c.ganancia))
+              )
+            )
+          )
+        )
+      ),
+      C('div',{className:'chart-card'},
+        C('div',{className:'chart-title'},'Precio venta vs Costo/kg'),
+        [...computed].sort((a,b)=>b.pventa-a.pventa).map(c=>
+          C('div',{key:c.id,className:'rbar-row'},
+            C('span',{className:'rbar-rank'},''),
+            C('span',{className:'rbar-name'},c.fullName),
+            C('div',{className:'rbar-track',style:{position:'relative'}},
+              C('div',{style:{position:'absolute',top:0,left:0,height:'100%',background:'#b5d4f4',width:c.costoKg/5*100+'%',borderRadius:4}}),
+              C('div',{style:{position:'absolute',top:0,left:0,height:'100%',background:'var(--green)',opacity:.85,width:c.pventa/5*100+'%',borderRadius:4,display:'flex',alignItems:'center',justifyContent:'flex-end',paddingRight:5}},
+                C('span',{style:{fontSize:10,color:'white',fontVariantNumeric:'tabular-nums'}},cu(c.pventa))
+              )
+            ),
+            C('span',{style:{fontSize:11,color:'var(--text3)',minWidth:34,textAlign:'right'}},cu(c.costoKg))
+          )
+        )
+      ),
+      C('div',{className:'chart-card'},
+        C('div',{className:'chart-title'},'Estadísticas generales'),
+        [
+          ['Costo/kg actual',     'U$D '+cu(costo.total)],
+          ['Margen promedio',     fp(avgM)],
+          ['Margen más alto',     fp(maxM)+' — '+[...computed].sort((a,b)=>b.margen-a.margen)[0].fullName],
+          ['Margen más bajo',     fp(Math.min(...computed.map(c=>c.margen)))+' — '+[...computed].sort((a,b)=>a.margen-b.margen)[0].fullName],
+          ['Mayor ganancia/kg',   'U$D '+cu(maxG)],
+          ['Precio prom. venta',  'U$D '+cu(computed.reduce((s,c)=>s+c.pventa,0)/computed.length)],
+          ['Clientes por debajo del costo', computed.filter(c=>c.ganancia<0).length+' cliente(s)'],
+        ].map(([l,v])=>C('div',{key:l,className:'stat-row'},C('span',{className:'stat-lbl'},l),C('span',{className:'stat-val'},v)))
+      )
+    )
+  );
+
+  /* ── DETALLE ── */
+  const ViewDetalle=!selData
+    ? C('div',{className:'empty'},'Seleccioná un cliente desde la tabla')
+    : (()=>{
+        const t = TIPOS[selData.tipo||'cristal']||TIPOS.cristal;
+        const cd = selData.costoDetalle || calcCostoTipo(selData.tipo||'cristal', params);
+        return C('div',{className:'det-wrap'},
+          C('div',{className:'det-head',style:{background:'linear-gradient(135deg,'+t.color+'CC,'+t.color+')'}},
+            C('div',{className:'det-head-n'},selData.fullName),
+            C('div',{style:{display:'flex',alignItems:'center',gap:8,marginTop:4}},
+              tipoBadge(selData.tipo||'cristal'),
+              C('span',{style:{fontSize:12,opacity:.7}},'Lámina PET')
+            )
+          ),
+          C('div',{className:'det-kpis'},
+            [{n:'U$D '+cu(selData.costoKg),l:'Costo/kg'},{n:'U$D '+cu(selData.ganancia),l:'Ganancia/kg',c:selData.ganancia>0?'var(--green)':'var(--red)'},{n:fp(selData.margen),l:'Margen neto',c:'var(--blue)'},{n:fp(selData.markup),l:'Markup'}]
+            .map(({n,l,c})=>C('div',{key:l,className:'dk'},C('div',{className:'dk-num',style:c?{color:c}:{}},n),C('div',{className:'dk-lbl'},l)))
+          ),
+          C('div',{className:'det-body'},
+            C('div',{className:'det-sec-title'},'Desglose de costos — '+t.lbl),
+            [
+              ['Materia Prima ajustada', 'U$D '+cu(cd.mp_adj)],
+              ['Energía',               'U$D '+cu(cd.energia)],
+              ['Mano de Obra',          'U$D '+f3(cd.mo)],
+              ['Gastos Varios',         'U$D '+cu(cd.gastosVarios)],
+              ['Pallet/Transporte',     'U$D '+f3(cd.pallet)],
+              ...(cd.extra>0 ? [['Extra master color','+ U$D '+cu(cd.extra)]] : []),
+              ['TOTAL costo/kg',        'U$D '+cu(cd.total)],
+            ].map(([l,v])=>C('div',{key:l,className:'drow'},
+              C('span',{className:'drow-lbl'},l),
+              C('span',{className:'drow-val',style:l.startsWith('TOTAL')?{color:t.color,fontWeight:700}:l.startsWith('Extra')?{color:'var(--amber)',fontWeight:600}:{}},v)
+            ))
+          ),
+          C('div',{className:'det-price-sect'},
+            C('div',{style:{fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'.05em',marginBottom:10}},'Precio de Venta'),
+            [['Precio anterior','U$D '+cu(selData.pant)],['Variación',fpu(selData.pctVsAnt)]].map(([l,v])=>
+              C('div',{key:l,className:'drow'},C('span',{className:'drow-lbl'},l),C('span',{className:'drow-val'},v))
+            ),
+            C('div',{className:'drow',style:{marginTop:4}},
+              C('span',{className:'drow-lbl',style:{fontWeight:600}},'Precio actual'),
+              C('input',{type:'number',step:'0.01',style:{width:80,background:'var(--bg)',border:'1px solid var(--border2)',borderRadius:5,textAlign:'right',fontSize:16,fontWeight:700,padding:'3px 7px',outline:'none',color:t.color},value:selData.pventa,onChange:e=>upPrice(selData.id,e.target.value)})
+            ),
+            C('div',{style:{marginTop:10,fontSize:12,color:'var(--text2)',marginBottom:5}},'Aumento rápido:'),
+            C('div',{className:'pct-btns'},
+              [5,8,10,12,15,20].map(pct=>C('button',{key:pct,className:'pct-btn'+(Math.abs((selData.pventa/selData.pant-1)*100-pct)<0.1?' on':''),onClick:()=>applyPct(selData.id,pct)},'+'+pct+'%'))
+            )
+          )
+        );
+      })();
+
+  /* ── PEDIDOS ── */
+  const ViewPedidos=C('div',{className:'ped-layout'},
+    // Formulario
+    C('div',{className:'ped-form-card'},
+      C('div',{className:'ped-form-head'},C('h3',null,'Nuevo pedido'),C('p',null,'Completá y guardá')),
+      C('div',{className:'ped-form-body'},
+        C('div',{className:'ped-field'},C('label',null,'Cliente'),
+          C('select',{value:pedForm.clienteId,onChange:e=>{const id=e.target.value;const cl=computed.find(c=>c.id===Number(id));setPedForm(f=>({...f,clienteId:id,precioUSD:cl?cu(cl.pventa):''}));}},
+            C('option',{value:''},'— Seleccionar —'),
+            computed.filter(cl=>cl.pventa>0).map(cl=>C('option',{key:cl.id,value:cl.id},(TIPOS[cl.tipo||'cristal']?.lbl||'') + ' — ' + cl.fullName))
+          )
+        ),
+        pedForm.clienteId&&(()=>{const cl=computed.find(c=>c.id===Number(pedForm.clienteId));return C('div',{style:{background:'var(--green-lt)',border:'1px solid #9FE1CB',borderRadius:'var(--r)',padding:'7px 12px',marginBottom:10,fontSize:12,color:'var(--green-dk)',display:'flex',gap:16}},
+          C('span',null,C('strong',null,'Costo: '),'U$D '+cu(cl.costoKg)),
+          C('span',null,C('strong',null,'Precio lista: '),'U$D '+cu(cl.pventa))
+        );})(),
+        C('div',{className:'ped-field-row'},
+          C('div',{className:'ped-field'},C('label',null,'Fecha'),C('input',{type:'date',value:pedForm.fecha,onChange:e=>setPedForm(f=>({...f,fecha:e.target.value}))})),
+          C('div',{className:'ped-field'},C('label',null,'N° OC'),C('input',{type:'text',placeholder:'OC-001',value:pedForm.nroOC,onChange:e=>setPedForm(f=>({...f,nroOC:e.target.value}))}))
+        ),
+        C('div',{className:'ped-field-row'},
+          C('div',{className:'ped-field'},C('label',null,'Kg pedidos'),C('input',{type:'number',step:'0.5',min:'0',placeholder:'500',value:pedForm.kg,onChange:e=>setPedForm(f=>({...f,kg:e.target.value}))})),
+          C('div',{className:'ped-field'},C('label',null,'Precio pactado (USD/kg)'),C('input',{type:'number',step:'0.01',min:'0',placeholder:'3.24',value:pedForm.precioUSD,onChange:e=>setPedForm(f=>({...f,precioUSD:e.target.value}))}))
+        ),
+        pedForm.kg&&pedForm.precioUSD&&pedForm.clienteId&&(()=>{
+          const cl=computed.find(c=>c.id===Number(pedForm.clienteId));
+          const kg=parseFloat(pedForm.kg)||0,pr=parseFloat(pedForm.precioUSD)||0;
+          const gan=pr-(cl?.costoKg||0);
+          return C('div',{style:{background:'var(--blue-lt)',border:'1px solid #B5D4F4',borderRadius:'var(--r)',padding:'7px 12px',marginBottom:10,fontSize:12,color:'var(--blue-dk)',display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:4}},
+            C('div',null,C('strong',null,'Monto: '),'U$D '+cu(pr*kg)),
+            C('div',null,C('strong',null,'Ganancia: '),C('span',{style:{color:gan>0?'var(--green-dk)':'var(--red)'}},'U$D '+cu(gan*kg))),
+            C('div',null,C('strong',null,'Margen: '),fp(pr>0?gan/pr*100:0))
+          );
+        })(),
+        C('div',{className:'ped-field'},C('label',null,'Nota'),C('input',{type:'text',placeholder:'Observaciones...',value:pedForm.nota,onChange:e=>setPedForm(f=>({...f,nota:e.target.value}))})),
+        C('button',{className:'ped-submit',onClick:addPedido},'Guardar pedido')
+      )
+    ),
+    // Panel derecho
+    C('div',{className:'ped-right'},
+      pedStats&&C('div',{className:'ped-kpis'},
+        [{val:pedidos.length,lbl:'Pedidos'},{val:pedStats.pendientes+' pend.',lbl:'Sin completar'},{val:'U$D '+cu(pedStats.totalMonto),lbl:'Monto acumulado'},{val:fp(pedStats.avgMargen),lbl:'Margen promedio'}]
+        .map(({val,lbl})=>C('div',{key:lbl,className:'kpi-card'},C('div',{className:'kpi-val'},val),C('div',{className:'kpi-lbl'},lbl)))
+      ),
+      pedidos.length>0&&C('div',{className:'ped-stats-grid'},
+        C('div',{className:'ped-report-card'},
+          C('div',{className:'ped-report-head'},'Por cliente'),
+          C('div',null,rankClientes.slice(0,7).map(cl=>C('div',{key:cl.nombre,className:'rept-row'},
+            C('div',null,C('div',{style:{fontWeight:600,fontSize:13}},cl.nombre),C('div',{style:{fontSize:11,color:'var(--text3)'}},cl.cant+' ped · '+Math.round(cl.kg).toLocaleString('es-AR')+' kg')),
+            C('div',{style:{textAlign:'right'}},C('div',{style:{fontWeight:700}},'U$D '+cu(cl.monto)),C('div',{style:{fontSize:11,color:'var(--green-dk)'}},'U$D '+cu(cl.ganancia)))
+          )))
+        ),
+        C('div',{className:'ped-report-card'},
+          C('div',{className:'ped-report-head'},'Últimos pedidos'),
+          C('div',null,pedidos.slice(0,7).map(p=>{
+            const est=getEstado(p);
+            return C('div',{key:p.id,className:'rept-row'},
+              C('div',null,C('div',{style:{fontWeight:600,fontSize:12}},p.nombre),C('div',{style:{fontSize:11,color:'var(--text3)'}},p.fecha+' · '+Math.round(p.kg).toLocaleString('es-AR')+' kg')),
+              C('div',{style:{textAlign:'right'}},estBadge(est))
+            );
+          }))
+        )
+      ),
+      C('div',{className:'ped-hist-card'},
+        C('div',{className:'ped-hist-head'},
+          C('span',{className:'ped-hist-title'},'Historial ('+pedFiltrados.length+')'),
+          C('div',{style:{display:'flex',gap:6,flexWrap:'wrap'}},
+            C('select',{style:{padding:'4px 8px',fontSize:12,border:'1px solid var(--border2)',borderRadius:5,background:'var(--bg2)',color:'var(--text)',outline:'none'},value:pedFiltCliente,onChange:e=>setPedFiltCliente(e.target.value)},
+              C('option',{value:''},'Todos los clientes'),
+              clientesDisponibles.map(nm=>C('option',{key:nm,value:nm},nm))
+            ),
+            C('select',{style:{padding:'4px 8px',fontSize:12,border:'1px solid var(--border2)',borderRadius:5,background:'var(--bg2)',color:'var(--text)',outline:'none'},value:pedFiltMes,onChange:e=>setPedFiltMes(e.target.value)},
+              C('option',{value:''},'Todos los meses'),
+              mesesDisponibles.map(m=>C('option',{key:m,value:m},m))
+            ),
+            C('select',{style:{padding:'4px 8px',fontSize:12,border:'1px solid var(--border2)',borderRadius:5,background:'var(--bg2)',color:'var(--text)',outline:'none'},value:pedFiltEstado,onChange:e=>setPedFiltEstado(e.target.value)},
+              C('option',{value:''},'Todos'),
+              C('option',{value:'pendiente'},'Pendiente'),
+              C('option',{value:'parcial'},'Parcial'),
+              C('option',{value:'completo'},'Completo')
+            ),
+            pedidos.length>0&&C('button',{className:'btn btn-green',style:{padding:'5px 10px',fontSize:12},onClick:exportPedidosXLS},'Exportar')
+          )
+        ),
+        pedFiltrados.length===0
+          ? C('div',{className:'empty-ped'},'No hay pedidos registrados')
+          : C('div',null,pedFiltrados.map(p=>{
+              const entregas=p.entregas||[];
+              const entregado=entregas.reduce((s,e)=>s+e.kg,0);
+              const pendiente=p.kg-entregado;
+              const pct=p.kg>0?entregado/p.kg:0;
+              const est=getEstado(p);
+              const isOpen=expandido===p.id;
+              const ef=entregaForm[p.id]||{fecha:today(),kg:'',nota:''};
+              return C('div',{key:p.id,style:{borderBottom:'1px solid var(--border)'}},
+                C('div',{style:{display:'grid',gridTemplateColumns:'auto 1fr auto auto auto',gap:'0 12px',alignItems:'center',padding:'9px 14px',cursor:'pointer'},onClick:()=>setExpandido(isOpen?null:p.id)},
+                  C('span',{style:{fontSize:11,color:'var(--text3)',width:14,transform:isOpen?'rotate(90deg)':'none',display:'inline-block',transition:'transform .15s',userSelect:'none'}},'▶'),
+                  C('div',null,
+                    C('div',{style:{display:'flex',alignItems:'center',gap:7}},
+                      C('span',{style:{fontWeight:700,fontSize:13}},p.nombre),
+                      p.nroOC&&C('span',{style:{fontSize:10,background:'var(--bg3)',borderRadius:3,padding:'1px 5px',color:'var(--text2)'}},p.nroOC)
+                    ),
+                    C('div',{style:{display:'flex',alignItems:'center',gap:8,marginTop:3}},
+                      C('span',{style:{fontSize:11,color:'var(--text3)'}},p.fecha),
+                      C('div',{style:{flex:'0 0 100px',background:'var(--bg3)',height:4,borderRadius:2,overflow:'hidden'}},
+                        C('div',{style:{width:pct*100+'%',height:'100%',background:est==='completo'?'var(--green)':est==='parcial'?'var(--amber)':'var(--border2)',borderRadius:2}})
+                      ),
+                      C('span',{style:{fontSize:11,color:'var(--text2)',fontVariantNumeric:'tabular-nums'}},Math.round(entregado).toLocaleString('es-AR')+' / '+Math.round(p.kg).toLocaleString('es-AR')+' kg')
+                    )
+                  ),
+                  C('div',{style:{textAlign:'right'}},C('div',{style:{fontSize:13,fontWeight:700}},'U$D '+cu(p.precio)+'/kg'),C('div',{style:{fontSize:11,color:'var(--text3)'}},fp(p.margen))),
+                  C('div',null,estBadge(est)),
+                  C('button',{className:'ped-del',onClick:e=>{e.stopPropagation();delPedido(p.id);}},'✕')
+                ),
+                isOpen&&C('div',{className:'ped-expand'},
+                  C('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}},
+                    C('div',null,
+                      C('div',{style:{fontSize:11,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'.04em',marginBottom:8}},'Entregas registradas'),
+                      entregas.length===0
+                        ? C('div',{style:{fontSize:12,color:'var(--text3)',fontStyle:'italic'}})
+                        : C('table',{style:{width:'100%',borderCollapse:'collapse',fontSize:12}},
+                            C('thead',null,C('tr',null,['Fecha','Kg','Nota',''].map(h=>C('th',{key:h,style:{textAlign:h==='Kg'?'right':'left',padding:'4px 8px',fontWeight:600,color:'var(--text3)',borderBottom:'1px solid var(--border)',fontSize:11}},h)))),
+                            C('tbody',null,entregas.map(e=>C('tr',{key:e.id,style:{borderBottom:'1px solid var(--border)'}},
+                              C('td',{style:{padding:'5px 8px'}},e.fecha),
+                              C('td',{style:{padding:'5px 8px',textAlign:'right',fontWeight:700,color:'var(--green-dk)',fontVariantNumeric:'tabular-nums'}},Math.round(e.kg).toLocaleString('es-AR')+' kg'),
+                              C('td',{style:{padding:'5px 8px',color:'var(--text3)',fontSize:11}},e.nota||'—'),
+                              C('td',null,C('button',{className:'ped-del',onClick:()=>delEntrega(p.id,e.id)},'✕'))
+                            )))
+                          ),
+                      C('div',{style:{marginTop:8,padding:'7px 10px',background:'var(--bg)',borderRadius:'var(--r)',border:'1px solid var(--border)',fontSize:12,display:'flex',gap:16}},
+                        C('span',null,C('strong',null,'Entregado: '),Math.round(entregado).toLocaleString('es-AR')+' kg'),
+                        C('span',null,C('strong',null,'Pendiente: '),C('span',{style:{color:pendiente>0?'var(--amber)':'var(--green-dk)'}},(pendiente>0?Math.round(pendiente).toLocaleString('es-AR')+' kg':'Completo ✓')))
+                      )
+                    ),
+                    pendiente>0&&C('div',null,
+                      C('div',{style:{fontSize:11,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'.04em',marginBottom:8}},'Registrar entrega'),
+                      C('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}},
+                        C('div',{className:'ped-field',style:{marginBottom:0}},C('label',null,'Fecha'),C('input',{type:'date',value:ef.fecha||today(),onChange:ev=>setEntregaForm(f=>({...f,[p.id]:{...(f[p.id]||{}),fecha:ev.target.value}}))})),
+                        C('div',{className:'ped-field',style:{marginBottom:0}},C('label',null,'Kg (máx '+Math.round(pendiente)+')'),C('input',{type:'number',step:'0.5',min:'0',max:pendiente,value:ef.kg||'',onChange:ev=>setEntregaForm(f=>({...f,[p.id]:{...(f[p.id]||{}),kg:ev.target.value}}))}))
+                      ),
+                      C('div',{className:'ped-field',style:{marginBottom:8}},C('label',null,'Nota'),C('input',{type:'text',placeholder:'Remito, obs...',value:ef.nota||'',onChange:ev=>setEntregaForm(f=>({...f,[p.id]:{...(f[p.id]||{}),nota:ev.target.value}}))})),
+                      C('button',{className:'ped-submit',style:{padding:'7px',fontSize:12},onClick:()=>addEntrega(p.id)},'Registrar entrega')
+                    )
+                  )
+                )
+              );
+            }))
+      )
+    )
+  );
+
+  /* ── AGREGAR CLIENTE ── */
+  const ViewNuevo=C('div',{className:'nuevo-layout'},
+    C('div',{style:{background:'var(--bg)',border:'1px solid var(--border)',borderRadius:'var(--rl)',overflow:'hidden',position:'sticky',top:80}},
+      C('div',{style:{background:'var(--blue)',padding:'13px 18px',color:'#fff'}},
+        C('h3',{style:{fontSize:14,fontWeight:700,margin:0}},'Agregar cliente'),
+        C('p',{style:{fontSize:11,opacity:.7,marginTop:2}},'rPET Cristal · queda guardado en la sesión')
+      ),
+      C('div',{style:{padding:'16px 18px'}},
+        nuevoMsg&&C('div',{style:{padding:'8px 12px',borderRadius:'var(--r)',marginBottom:12,fontSize:12,fontWeight:500,background:nuevoMsg.startsWith('✓')?'var(--green-lt)':'var(--amber-lt)',color:nuevoMsg.startsWith('✓')?'var(--green-dk)':'var(--amber)',border:'1px solid '+(nuevoMsg.startsWith('✓')?'#9FE1CB':'#F0C070')}},nuevoMsg),
+        C('div',{className:'ped-field'},C('label',null,'Nombre del cliente *'),C('input',{type:'text',placeholder:'Ej: NUEVA EMPRESA S.A.',value:nuevoForm.name,onChange:e=>setNuevoForm(f=>({...f,name:e.target.value}))})),
+        C('div',{className:'ped-field'},
+          C('label',null,'Tipo de producto *'),
+          C('select',{value:nuevoForm.tipo,onChange:e=>setNuevoForm(f=>({...f,tipo:e.target.value}))},
+            Object.entries(TIPOS).map(([k,t])=>C('option',{key:k,value:k},t.lbl))
+          )
+        ),
+        C('div',{style:{background:'var(--blue-lt)',border:'1px solid #B5D4F4',borderRadius:'var(--r)',padding:'10px 14px',marginBottom:12,fontSize:12,color:'var(--blue-dk)'}},
+          (()=>{
+            const t=TIPOS[nuevoForm.tipo||'cristal']||TIPOS.cristal;
+            const cd=calcCostoTipo(nuevoForm.tipo||'cristal',params);
+            return [
+              C('div',{key:'v'},C('strong',null,'Variante: '),tipoBadge(nuevoForm.tipo||'cristal')),
+              C('div',{key:'c',style:{marginTop:4}},C('strong',null,'Costo/kg calculado: '),'U$D '+cu(cd.total),
+                cd.extra>0&&C('span',{style:{color:'var(--amber)',marginLeft:6}},'(+U$D '+cu(cd.extra)+' master)')
+              ),
+            ];
+          })()
+        ),
+        C('div',{className:'ped-field-row'},
+          C('div',{className:'ped-field'},C('label',null,'Precio de venta (USD/kg) *'),C('input',{type:'number',step:'0.01',min:'0',placeholder:'3.50',value:nuevoForm.pventa,onChange:e=>setNuevoForm(f=>({...f,pventa:e.target.value}))})),
+          C('div',{className:'ped-field'},C('label',null,'Precio anterior (USD/kg)'),C('input',{type:'number',step:'0.01',min:'0',placeholder:'igual al de venta',value:nuevoForm.pant,onChange:e=>setNuevoForm(f=>({...f,pant:e.target.value}))}))
+        ),
+        nuevoForm.pventa&&(()=>{
+          const pv=parseFloat(nuevoForm.pventa)||0;
+          const cd=calcCostoTipo(nuevoForm.tipo||'cristal',params);
+          const gan=pv-cd.total;
+          return C('div',{style:{background:'var(--green-lt)',border:'1px solid #9FE1CB',borderRadius:'var(--r)',padding:'8px 12px',marginBottom:12,fontSize:12,color:'var(--green-dk)',display:'flex',gap:16}},
+            C('span',null,'Ganancia: ',C('strong',{style:{color:gan>0?'var(--green-dk)':'var(--red)'}},'U$D '+cu(gan))),
+            C('span',null,'Margen: ',C('strong',null,fp(pv>0?gan/pv*100:0)))
+          );
+        })(),
+        C('button',{className:'ped-submit',onClick:saveNuevo},'+ Guardar cliente')
+      )
+    ),
+    C('div',{style:{background:'var(--bg)',border:'1px solid var(--border)',borderRadius:'var(--rl)',overflow:'hidden'}},
+      C('div',{style:{padding:'12px 16px',borderBottom:'1px solid var(--border)',display:'flex',justifyContent:'space-between',alignItems:'center'}},
+        C('span',{style:{fontSize:14,fontWeight:600}},clients.length+' clientes activos'),
+        C('span',{style:{fontSize:11,color:'var(--text3)'}},INIT_CLIENTS.length+' originales + '+(clients.length-INIT_CLIENTS.length)+' nuevos')
+      ),
+      C('table',{style:{width:'100%',borderCollapse:'collapse',fontSize:12.5}},
+        C('thead',null,C('tr',null,
+          ['Cliente','Variante','Costo/kg','$ Venta','Ganancia','Margen %',''].map(h=>C('th',{key:h,style:{padding:'7px 12px',textAlign:h==='Costo/kg'||h==='$ Venta'||h==='Ganancia'||h==='Margen %'?'right':'left',fontSize:11,fontWeight:600,color:'var(--text3)',background:'var(--bg2)',borderBottom:'1px solid var(--border)',whiteSpace:'nowrap'}},h))
+        )),
+        C('tbody',null,computed.map(c=>{
+          const isNew=!INIT_CLIENTS_IDS.has(c.id);
+          return C('tr',{key:c.id,style:{borderBottom:'1px solid var(--border)',background:isNew?'#f0faf6':'transparent'}},
+            C('td',{style:{padding:'6px 12px',fontWeight:600}},c.fullName,isNew&&C('span',{style:{marginLeft:6,fontSize:9,background:'var(--green-lt)',color:'var(--green-dk)',borderRadius:3,padding:'1px 5px',fontWeight:700}},'NUEVO')),
+            C('td',{style:{padding:'6px 12px'}}, tipoBadge(c.tipo||'cristal')),
+            C('td',{style:{padding:'6px 12px',textAlign:'right',fontVariantNumeric:'tabular-nums'}},'U$D '+cu(c.costoKg)),
+            C('td',{style:{padding:'6px 12px',textAlign:'right',fontWeight:700,color:'var(--blue)',fontVariantNumeric:'tabular-nums'}},'U$D '+cu(c.pventa)),
+            C('td',{style:{padding:'6px 12px',textAlign:'right',fontVariantNumeric:'tabular-nums',color:c.ganancia>0?'var(--green-dk)':'var(--red)',fontWeight:600}},'U$D '+cu(c.ganancia)),
+            C('td',{style:{padding:'6px 12px',textAlign:'right',color:c.margen>50?'var(--green-dk)':c.margen>40?'var(--green)':c.margen>30?'var(--amber)':'var(--red)',fontWeight:600}},fp(c.margen)),
+            C('td',{style:{padding:'6px 12px'}},isNew&&C('button',{className:'ped-del',onClick:()=>removeClient(c.id)},'✕'))
+          );
+        }))
+      )
+    )
+  );
+
+  /* ── PARÁMETROS ── */
+  const ViewParams=C('div',{style:{maxWidth:820}},
+    C('div',{className:'cost-total-card',style:{marginBottom:18}},
+      C('div',null,C('div',{style:{fontSize:12,opacity:.8}},'Costo total actual'),C('div',{style:{fontSize:28,fontWeight:800}},'U$D '+cu(costo.total)+' / kg')),
+      C('div',{style:{textAlign:'right',display:'flex',flexDirection:'column',alignItems:'flex-end',gap:8}},
+        C('div',{style:{fontSize:12,opacity:.7}},'Modificá los parámetros para ver el impacto en tiempo real'),
+        C('button',{
+          style:{padding:'5px 12px',background:'rgba(255,255,255,.2)',border:'1px solid rgba(255,255,255,.4)',borderRadius:'var(--r)',color:'#fff',fontSize:11,cursor:'pointer',fontWeight:600},
+          onClick:()=>{if(confirm('¿Restablecer todos los parámetros a los valores originales?')){setParams(INIT_PARAMS);localStorage.removeItem('winflex_pet_params');}}
+        },'↺ Restablecer originales')
+      )
+    ),
+    C('div',{className:'params-grid'},
+      // Materia Prima
+      C('div',{className:'param-section'},
+        C('div',{className:'param-section-head'},'Materia Prima'),
+        C('div',{className:'param-section-body'},
+          [
+            {k:'precioPreforma',lbl:'Precio Preforma Molida',u:'USD/kg'},
+            {k:'pctPreforma',   lbl:'% Preforma Molida',    u:'%'},
+            {k:'precioScrap',   lbl:'Precio Scrap Interno', u:'USD/kg'},
+            {k:'pctScrap',      lbl:'% Scrap Interno',      u:'%'},
+            {k:'merma',         lbl:'Merma proceso',        u:'%'},
+            {k:'recuperacion',  lbl:'Recuperación merma',   u:'%'},
+          ].map(({k,lbl,u})=>C('div',{key:k,className:'param-row'},
+            C('span',{className:'param-lbl'},lbl),
+            C('input',{className:'param-inp',type:'number',step:'0.01',value:params[k],onChange:e=>upParam(k,e.target.value)}),
+            C('span',{className:'param-unit'},u)
+          ))
+        )
+      ),
+      // Proceso
+      C('div',{className:'param-section'},
+        C('div',{className:'param-section-head'},'Proceso y Producción'),
+        C('div',{className:'param-section-body'},
+          [
+            {k:'costoEnergia',  lbl:'Costo Energía',        u:'USD/kg'},
+            {k:'gastosVarios',  lbl:'Gastos Varios',        u:'USD/kg'},
+            {k:'otros',         lbl:'Otros',                u:'USD/kg'},
+            {k:'valorHoraMO',   lbl:'Valor Hora MO',        u:'ARS/h'},
+            {k:'cantOperarios', lbl:'Cant. Operarios',      u:''},
+            {k:'cargasSoc',     lbl:'Cargas Sociales',      u:'%'},
+            {k:'prodHora',      lbl:'Producción',           u:'kg/h'},
+          ].map(({k,lbl,u})=>C('div',{key:k,className:'param-row'},
+            C('span',{className:'param-lbl'},lbl),
+            C('input',{className:'param-inp',type:'number',step:'0.01',value:params[k],onChange:e=>upParam(k,e.target.value)}),
+            C('span',{className:'param-unit'},u)
+          ))
+        )
+      ),
+      // Pallet + Tipo de cambio
+      C('div',{className:'param-section'},
+        C('div',{className:'param-section-head'},'Pallet y Tipo de Cambio'),
+        C('div',{className:'param-section-body'},
+          [
+            {k:'costoPallet',  lbl:'Costo Pallet',   u:'ARS'},
+            {k:'capPallet',    lbl:'Cap. Pallet',     u:'kg'},
+          ].map(({k,lbl,u})=>C('div',{key:k,className:'param-row'},
+            C('span',{className:'param-lbl'},lbl),
+            C('input',{className:'param-inp',type:'number',step:'1',value:params[k],onChange:e=>upParam(k,e.target.value)}),
+            C('span',{className:'param-unit'},u)
+          )).concat([
+            C('div',{key:'tc',style:{display:'flex',flexDirection:'column',gap:4,padding:'8px 10px',background:'var(--bg3)',borderRadius:'var(--r)',border:'2px solid '+(tcStatus==='ok'?'var(--green)':tcStatus==='error'?'var(--red)':'var(--border)')}},
+              C('span',{className:'param-lbl'},'Tipo de Cambio BNA'),
+              C('div',{style:{display:'flex',gap:6,alignItems:'center'}},
+                C('input',{className:'param-inp',style:{flex:1},type:'number',step:'1',value:params.tipoCambio,onChange:e=>upParam('tipoCambio',e.target.value)}),
+                C('span',{className:'param-unit'},'ARS/USD'),
+                C('button',{title:'Actualizar desde BNA',onClick:fetchTC,style:{padding:'5px 10px',borderRadius:'var(--r)',border:'1px solid var(--border2)',background:tcStatus==='loading'?'var(--bg3)':tcStatus==='ok'?'var(--green-lt)':tcStatus==='error'?'var(--red-lt)':'var(--bg)',color:tcStatus==='ok'?'var(--green-dk)':tcStatus==='error'?'var(--red)':'var(--text2)',cursor:tcStatus==='loading'?'wait':'pointer',fontSize:14,fontWeight:700,transition:'all .2s',whiteSpace:'nowrap'}},
+                  tcStatus==='loading'?'…':tcStatus==='ok'?'✓ OK':tcStatus==='error'?'✗ Error':'↻ BNA')
+              ),
+              tcLastUpdate&&C('span',{style:{fontSize:10,color:'var(--text3)'}},'Actualiz: '+tcLastUpdate)
+            )
+          ])
+        )
+      ),
+      // Masters de color + Virgen
+      C('div',{className:'param-section',style:{gridColumn:'1/-1'}},
+        C('div',{className:'param-section-head'},'Variantes — Preforma Virgen y Masters de Color'),
+        C('div',{style:{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:0}},
+          [
+            {k:'precioPreformaVirgen', lbl:'Preforma Virgen',    u:'USD/kg', note:''},
+            {k:'pctMaster',           lbl:'% Master aplicado',  u:'%',      note:'sobre kg de producto'},
+            {k:'masterBlanco',        lbl:'Master Blanco',      u:'USD/kg', note:'Liofol o similar'},
+            {k:'masterNegro',         lbl:'Master Negro',       u:'USD/kg', note:''},
+            {k:'masterAzulino',       lbl:'Master Azulino',     u:'USD/kg', note:''},
+            {k:'masterGris',          lbl:'Master Gris',        u:'USD/kg', note:'sin valor aún'},
+            {k:'masterAntiblocking',  lbl:'Antiblocking (AB)',  u:'USD/kg', note:'sin valor aún'},
+          ].map(({k,lbl,u,note},i)=>C('div',{key:k,style:{padding:'10px 14px',borderBottom:i<6?'1px solid var(--border)':'none',borderRight:(i%3!==2)?'1px solid var(--border)':'none'}},
+            C('div',{style:{fontSize:11,color:'var(--text3)',marginBottom:2}},lbl+(note?' — '+note:'')),
+            C('div',{style:{display:'flex',alignItems:'center',gap:6}},
+              C('input',{className:'param-inp',style:{flex:1,width:'auto'},type:'number',step:'0.01',value:params[k],onChange:e=>upParam(k,e.target.value)}),
+              C('span',{className:'param-unit',style:{width:'auto'}},u)
+            )
+          ))
+        )
+      ),
+      // Tabla de costos por tipo
+      C('div',{className:'param-section',style:{gridColumn:'1/-1'}},
+        C('div',{className:'param-section-head'},'Costo por variante (calculado en tiempo real)'),
+        C('div',{style:{overflowX:'auto'}},
+          C('table',{style:{width:'100%',borderCollapse:'collapse',fontSize:12.5}},
+            C('thead',null,C('tr',null,
+              ['Variante','Base','Extra master','Costo/kg total'].map(h=>C('th',{key:h,style:{padding:'7px 12px',textAlign:h==='Variante'?'left':'right',fontSize:11,fontWeight:600,color:'var(--text3)',background:'var(--bg2)',borderBottom:'1px solid var(--border)',whiteSpace:'nowrap'}},h))
+            )),
+            C('tbody',null,
+              Object.entries(TIPOS).map(([k,t])=>{
+                const cd=calcCostoTipo(k,params);
+                return C('tr',{key:k,style:{borderBottom:'1px solid var(--border)'}},
+                  C('td',{style:{padding:'6px 12px'}}, tipoBadge(k)),
+                  C('td',{style:{padding:'6px 12px',textAlign:'right',fontVariantNumeric:'tabular-nums'}},'U$D '+cu(cd.base)),
+                  C('td',{style:{padding:'6px 12px',textAlign:'right',fontVariantNumeric:'tabular-nums',color:cd.extra>0?'var(--amber)':'var(--text3)'}},(cd.extra>0?'+ U$D '+cu(cd.extra):'—')),
+                  C('td',{style:{padding:'6px 12px',textAlign:'right',fontWeight:700,fontVariantNumeric:'tabular-nums',color:t.color}},'U$D '+cu(cd.total))
+                );
+              })
+            )
+          )
+        )
+      ),
+      // Impacto en costo
+      C('div',{className:'param-section'},
+        C('div',{className:'param-section-head'},'Impacto en costo'),
+        C('div',{style:{padding:'14px 16px'}},
+          costComps.map(x=>C('div',{key:x.lbl,style:{marginBottom:10}},
+            C('div',{style:{display:'flex',justifyContent:'space-between',fontSize:12,marginBottom:3}},
+              C('span',{style:{color:'var(--text2)'}},x.lbl),
+              C('strong',null,'U$D '+cu(x.val)+' ('+fp(pctOf(x.val))+')')
+            ),
+            C('div',{className:'bar-bg',style:{height:8}},
+              C('div',{className:'bar-fill',style:{width:pctOf(x.val)+'%',background:x.color}})
+            )
+          ))
+        )
+      )
+    )
+  );
+
+  /* ══════════════════ ROUTING ════════════════════════════════════════════ */
+  const NAV=[
+    {id:'resumen',  lbl:'Resumen',       icon:'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'},
+    {id:'precios',  lbl:'Precios',       icon:'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'},
+    {id:'costos',   lbl:'Costos',        icon:'M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M12 15h.01M15 15h.01M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z'},
+    {id:'analisis', lbl:'Análisis',      icon:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'},
+    {id:'detalle',  lbl:'Detalle',       icon:'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'},
+    {id:'pedidos',  lbl:'Pedidos',       icon:'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 17h.01'},
+    {id:'nuevo',    lbl:'+ Agregar cliente', icon:'M12 4v16m8-8H4'},
+    {id:'params',   lbl:'Parámetros',    icon:'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z|M15 12a3 3 0 11-6 0 3 3 0 016 0z'},
+  ];
+  const titles={resumen:'Resumen',precios:'Precios',costos:'Costos',analisis:'Análisis',detalle:'Detalle',pedidos:'Pedidos',nuevo:'Agregar cliente',params:'Parámetros'};
+  const views={resumen:ViewResumen,precios:ViewPrecios,costos:ViewCostos,analisis:ViewAnalisis,detalle:ViewDetalle,pedidos:ViewPedidos,nuevo:ViewNuevo,params:ViewParams};
+
+  return C('div',null,
+    C('div',{className:'sidebar'},
+      C('div',{className:'logo'},
+        C('div',{className:'logo-mark'},'WINFLEX'),
+        C('div',{className:'logo-sub'},'Lámina PET — v1.0'),
+        C('div',{className:'logo-badge'},Object.keys(TIPOS).length+' variantes de producto')
+      ),
+      C('nav',{className:'nav'},
+        C('div',{className:'nav-sec'},'Secciones'),
+        NAV.map(item=>C('button',{key:item.id,className:'nav-item'+(view===item.id?' active':''),onClick:()=>setView(item.id)},
+          C(Ico,{d:item.icon}), item.lbl
+        ))
+      ),
+      C('div',{className:'sidebar-foot'},
+      C('button',{
+        style:{width:'100%',padding:'6px',marginBottom:8,background:'var(--blue-lt)',border:'1px solid #B5D4F4',borderRadius:'var(--r)',fontSize:11,fontWeight:700,color:'var(--blue)',cursor:'pointer'},
+        onClick:guardarCambios
+      },'☁ Guardar cambios'),
+        C('div',null,computed.filter(cl=>cl.pventa>0).length+' clientes con precio'),
+        C('div',null,'Costo: U$D '+cu(costo.total)+'/kg'),
+        C('div',null,'Margen prom: '+fp(avgM)),
+        C('div',null,pedidos.length+' pedidos registrados')
+      )
+    ),
+    C('div',{className:'main'},
+      C('div',{className:'topbar'},
+        C('div',null,
+          C('div',{className:'page-heading'},titles[view]),
+          C('div',{className:'page-sub'},'Winflex S.A. — Lámina PET · '+Object.keys(TIPOS).length+' variantes')
+        ),
+        C('div',{style:{display:'flex',gap:8,alignItems:'center'}},
+          // TC chip
+          C('div',{
+            style:{display:'flex',alignItems:'center',gap:6,padding:'5px 10px',borderRadius:'var(--r)',border:'1px solid var(--border2)',background:'var(--bg2)',cursor:'pointer',transition:'all .2s',
+              ...(tcStatus==='ok'?{borderColor:'var(--green)',background:'var(--green-lt)'}:tcStatus==='error'?{borderColor:'var(--red)',background:'var(--red-lt)'}:{})},
+            onClick:fetchTC,
+            title:'Clic para actualizar el tipo de cambio desde Banco Nación Argentina',
+          },
+            C('span',{style:{fontSize:11,color:'var(--text3)'}},tcStatus==='loading'?'BNA…':tcStatus==='ok'?'BNA ✓':tcStatus==='error'?'BNA ✗':'BNA'),
+            C('span',{style:{fontSize:13,fontWeight:700,fontVariantNumeric:'tabular-nums',color:tcStatus==='ok'?'var(--green-dk)':tcStatus==='error'?'var(--red)':'var(--text)'}},
+              '$ '+params.tipoCambio.toLocaleString('es-AR')
+            ),
+            C('span',{style:{fontSize:11,color:'var(--text3)'}},'↻')
+          ),
+          C('button',{className:'btn btn-blue',onClick:()=>exportResumen(computed,costo,params)},
+            C(Ico,{d:'M12 3v13|M7 11l5 5 5-5|M3 20h18',s:14,stroke:'white'}), 'Descargar Excel'
+          ),
+          C('div',{
+            onClick:guardarCambios,
+            title:'Clic para guardar todos los cambios en la nube',
+            style:{display:'flex',alignItems:'center',gap:5,padding:'5px 10px',borderRadius:'var(--r)',border:'1px solid var(--border2)',fontSize:12,fontWeight:600,cursor:'pointer',transition:'all .15s',
+              background:syncStatus==='ok'?'var(--green-lt)':syncStatus==='error'?'var(--red-lt)':syncStatus==='loading'?'var(--blue-lt)':syncStatus==='saving'?'var(--amber-lt)':'var(--bg2)',
+              color:syncStatus==='ok'?'var(--green-dk)':syncStatus==='error'?'var(--red)':syncStatus==='loading'?'var(--blue)':syncStatus==='saving'?'var(--amber)':'var(--text2)',
+            }},
+            syncStatus==='saving'?'☁ Guardando…':syncStatus==='ok'?'✓ Guardado':syncStatus==='error'?'✗ Sin conexión':syncStatus==='loading'?'☁ Cargando…':'☁ Guardar'
+          )
+        )
+      ),
+      C('div',{className:'content'},views[view])
+    )
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(C(App));
+</script>
+</body>
+</html>

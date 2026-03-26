@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Winflex S.A.</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23185FA5'/%3E%3Ctext x='32' y='47' font-family='Arial Black,Arial' font-weight='900' font-size='40' fill='white' text-anchor='middle'%3EW%3C/text%3E%3C/svg%3E">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f0f4f8;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .logo {
+    font-size: 32px;
+    font-weight: 800;
+    color: #185FA5;
+    letter-spacing: -1px;
+    margin-bottom: 4px;
+  }
+  .sub {
+    font-size: 14px;
+    color: #888;
+    margin-bottom: 40px;
+  }
+  .cards {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  a.card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: white;
+    border-radius: 16px;
+    padding: 28px 32px;
+    width: 260px;
+    text-decoration: none;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    border: 2px solid transparent;
+    transition: all .15s;
+  }
+  a.card:hover {
+    border-color: #185FA5;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(24,95,165,.15);
+  }
+  .card-icon {
+    font-size: 36px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a18;
+    margin-bottom: 6px;
+  }
+  .card-desc {
+    font-size: 13px;
+    color: #888;
+    line-height: 1.5;
+    margin-bottom: 20px;
+  }
+  .card-btn {
+    display: inline-block;
+    background: #185FA5;
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 8px;
+    text-align: center;
+  }
+  a.card:hover .card-btn {
+    background: #0C447C;
+  }
+  .footer {
+    margin-top: 40px;
+    font-size: 12px;
+    color: #aaa;
+  }
+</style>
+</head>
+<body>
+  <div class="logo">WINFLEX</div>
+  <div class="sub">Winflex S.A. — Gestión de costos y precios</div>
+
+  <div class="cards">
+    <a class="card" href="Winflex_PET_PE_v2.html">
+      <div>
+        <div class="card-icon">🏭</div>
+        <div class="card-title">Lámina PET / PE</div>
+        <div class="card-desc">Costos, precios y pedidos para lámina PET/PE laminada. 15 clientes activos.</div>
+      </div>
+      <div class="card-btn">Abrir →</div>
+    </a>
+
+    <a class="card" href="Winflex_Lamina_PET.html">
+      <div>
+        <div class="card-icon">🔬</div>
+        <div class="card-title">Lámina PET</div>
+        <div class="card-desc">Costos y precios para rPET Cristal, Blanco, Negro, Azulino, Virgen y más variantes.</div>
+      </div>
+      <div class="card-btn">Abrir →</div>
+    </a>
+  </div>
+
+  <div class="footer">Winflex S.A. · Lanús y Chivilcoy</div>
+</body>
+</html>
