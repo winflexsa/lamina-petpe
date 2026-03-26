@@ -548,6 +548,10 @@ function App(){
     setSyncStatus('saving');
     const ok = await jbinSave(JBIN_ID_KEY, 'Winflex-PET', {params, clients, pedidos});
     setSyncStatus(ok?'ok':'error');
+    if (ok) {
+      const newId = localStorage.getItem(JBIN_ID_KEY);
+      if (newId) console.log('WINFLEX PET BIN ID:', newId);
+    }
     setTimeout(()=>setSyncStatus('idle'), ok?4000:6000);
   }
 
