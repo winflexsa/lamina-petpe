@@ -322,6 +322,8 @@ function calcCosto(c, p) {
 }
 
 
+
+
 /* ═══════════════ JSONBIN SYNC ══════════════════════════════════════════ */
 const JBIN_KEY = '$2a$10$8p4t41BnTv.9Ls.4kFLhouDMqJGQEd5LQlBYEz8n1y6nH/3dFq27G';
 const JBIN_URL = 'https://api.jsonbin.io/v3';
@@ -332,7 +334,7 @@ async function jbinLoad(binIdKey) {
   try {
     const res = await fetch(JBIN_URL+'/b/'+binId+'/latest', {
       headers: {'X-Master-Key': JBIN_KEY},
-      signal: AbortSignal.timeout(8000)
+      signal: AbortSignal.timeout(10000)
     });
     if (!res.ok) return null;
     const d = await res.json();
@@ -346,9 +348,9 @@ async function jbinSave(binIdKey, label, data) {
     if (!binId) {
       const res = await fetch(JBIN_URL+'/b', {
         method: 'POST',
-        headers: {'Content-Type':'application/json','X-Master-Key':JBIN_KEY,'X-Bin-Name':label,'X-Bin-Private':'false'},
+        headers: {'Content-Type':'application/json','X-Master-Key':JBIN_KEY,'X-Bin-Name':label},
         body: JSON.stringify(data),
-        signal: AbortSignal.timeout(8000)
+        signal: AbortSignal.timeout(10000)
       });
       if (!res.ok) return false;
       const d = await res.json();
@@ -360,7 +362,7 @@ async function jbinSave(binIdKey, label, data) {
         method: 'PUT',
         headers: {'Content-Type':'application/json','X-Master-Key':JBIN_KEY},
         body: JSON.stringify(data),
-        signal: AbortSignal.timeout(8000)
+        signal: AbortSignal.timeout(10000)
       });
       return res.ok;
     }
@@ -441,25 +443,14 @@ function App() {
     try{const s=localStorage.getItem('winflex_petpe_clients');return s?JSON.parse(s):INIT_CLIENTS;}catch{return INIT_CLIENTS;}
   });
   const [view, setView] = useState('clientes');
-  const [syncStatus,setSyncStatus] = useState('idle');
-  const [syncMsg,setSyncMsg]       = useState('');
+  const [syncStatus,setSyncStatus] = useState('idle'); // idle | saving | ok | error | loading
   const JBIN_ID_KEY = 'winflex_petpe_jbin_id';
-  const saveTimer = React.useRef(null);
 
+  // Guardar en localStorage automáticamente
   React.useEffect(()=>{try{localStorage.setItem('winflex_petpe_params_v2',JSON.stringify(params));}catch{}},[params]);
   React.useEffect(()=>{try{localStorage.setItem('winflex_petpe_clients',JSON.stringify(clients));}catch{}},[clients]);
 
-  function triggerSync(p, cl) {
-    clearTimeout(saveTimer.current);
-    setSyncStatus('saving');
-    saveTimer.current = setTimeout(async ()=>{
-      const ok = await jbinSave(JBIN_ID_KEY, 'Winflex-PETPE', {params:p||params, clients:cl||clients});
-      setSyncStatus(ok?'saved':'error');
-      setSyncMsg(ok?'Sincronizado ✓':'Error al sincronizar');
-      setTimeout(()=>setSyncStatus('idle'),3000);
-    }, 2000);
-  }
-
+  // Cargar desde JSONBin al abrir
   React.useEffect(()=>{
     (async ()=>{
       const binId = localStorage.getItem(JBIN_ID_KEY);
@@ -467,13 +458,20 @@ function App() {
       setSyncStatus('loading');
       const data = await jbinLoad(JBIN_ID_KEY);
       if (data) {
-        if (data.params) { setParams({...INIT_PARAMS,...data.params}); try{localStorage.setItem('winflex_petpe_params_v2',JSON.stringify(data.params));}catch{} }
+        if (data.params)  { const p={...INIT_PARAMS,...data.params};   setParams(p);  try{localStorage.setItem('winflex_petpe_params_v2',JSON.stringify(p));}catch{} }
         if (data.clients && data.clients.length) { setClients(data.clients); try{localStorage.setItem('winflex_petpe_clients',JSON.stringify(data.clients));}catch{} }
-        setSyncStatus('saved'); setSyncMsg('Datos cargados desde la nube ✓');
-        setTimeout(()=>setSyncStatus('idle'),3000);
+        setSyncStatus('ok'); setTimeout(()=>setSyncStatus('idle'),4000);
       } else { setSyncStatus('idle'); }
     })();
   },[]);
+
+  // GUARDAR CAMBIOS — botón manual
+  async function guardarCambios() {
+    setSyncStatus('saving');
+    const ok = await jbinSave(JBIN_ID_KEY, 'Winflex-PETPE', {params, clients});
+    setSyncStatus(ok?'ok':'error');
+    setTimeout(()=>setSyncStatus('idle'), ok?4000:6000);
+  }
 
   // ── Tipo de cambio BNA ──
   const [tcStatus, setTcStatus] = React.useState('idle'); // idle | loading | ok | error
@@ -522,8 +520,8 @@ function App() {
   },[computed,sortBy,sortDir]);
 
   function tgSort(col){if(sortBy===col)setSortDir(d=>d==='desc'?'asc':'desc');else{setSortBy(col);setSortDir('desc');}}
-  function upParam(k,v){const n=parseFloat(v);if(!isNaN(n)&&n>=0){const np={...params,[k]:n};setParams(np);triggerSync(np,null);}}
-  function upPrice(id,v){const n=parseFloat(v);if(!isNaN(n)&&n>0){const nc=clients.map(c=>c.id===id?{...c,pVenta:Math.ceil(n*100)/100}:c);setClients(nc);triggerSync(null,nc);}}
+  function upParam(k,v){const n=parseFloat(v);if(!isNaN(n)&&n>=0){const np={...params,[k]:n};setParams(np);}}
+  function upPrice(id,v){const n=parseFloat(v);if(!isNaN(n)&&n>0){const nc=clients.map(c=>c.id===id?{...c,pVenta:Math.ceil(n*100)/100}:c);setClients(nc);}}
   function applyPct(id,pct){setClients(cs=>cs.map(c=>c.id!==id?c:{...c,pVenta:parseFloat((Math.ceil(c.pAnt*(1+pct/100)*100)/100).toFixed(2))}));}
   function upClientProp(id,k,v){const n=parseFloat(v);if(!isNaN(n)&&n>0)setClients(cs=>cs.map(c=>c.id===id?{...c,[k]:n}:c));}
   function applyAllPct(pct){setClients(cs=>cs.map(c=>({...c,pVenta:parseFloat((Math.ceil(c.pAnt*(1+pct/100)*100)/100).toFixed(2))})));}
@@ -1752,8 +1750,8 @@ function App() {
       React.createElement('div',{className:'sidebar-foot'},
         React.createElement('button',{
           style:{width:'100%',padding:'6px',marginBottom:8,background:'var(--blue-lt)',border:'1px solid #B5D4F4',borderRadius:'var(--r)',fontSize:11,fontWeight:700,color:'var(--blue)',cursor:'pointer'},
-          onClick:()=>triggerSync(params,clients)
-        },'☁ Sincronizar ahora'),
+          onClick:guardarCambios
+        },'☁ Guardar cambios'),
         React.createElement('div',null,'15 clientes activos'),
         React.createElement('div',null,'Margen prom: '+fp(avgM)),
         React.createElement('div',null,pedidos.length+' pedidos registrados')
@@ -1785,12 +1783,13 @@ function App() {
             'Descargar Excel'
           ),
           React.createElement('div',{
-            title:syncMsg||'Sincronización automática con JSONBin',
-            style:{display:'flex',alignItems:'center',gap:5,padding:'5px 10px',borderRadius:'var(--r)',border:'1px solid var(--border2)',fontSize:12,fontWeight:600,cursor:'default',
-              background:syncStatus==='saved'?'var(--green-lt)':syncStatus==='error'?'var(--red-lt)':syncStatus==='loading'?'var(--blue-lt)':'var(--bg2)',
-              color:syncStatus==='saved'?'var(--green-dk)':syncStatus==='error'?'var(--red)':syncStatus==='loading'?'var(--blue)':'var(--text3)',
+            onClick:guardarCambios,
+            title:'Clic para guardar todos los cambios en la nube',
+            style:{display:'flex',alignItems:'center',gap:5,padding:'5px 10px',borderRadius:'var(--r)',border:'1px solid var(--border2)',fontSize:12,fontWeight:600,cursor:'pointer',transition:'all .15s',
+              background:syncStatus==='ok'?'var(--green-lt)':syncStatus==='error'?'var(--red-lt)':syncStatus==='loading'?'var(--blue-lt)':syncStatus==='saving'?'var(--amber-lt)':'var(--bg2)',
+              color:syncStatus==='ok'?'var(--green-dk)':syncStatus==='error'?'var(--red)':syncStatus==='loading'?'var(--blue)':syncStatus==='saving'?'var(--amber)':'var(--text2)',
             }},
-            syncStatus==='saving'?'☁ guardando…':syncStatus==='saved'?'☁ sincronizado':syncStatus==='error'?'☁ sin conexión':syncStatus==='loading'?'☁ cargando…':'☁'
+            syncStatus==='saving'?'☁ Guardando…':syncStatus==='ok'?'✓ Guardado':syncStatus==='error'?'✗ Sin conexión':syncStatus==='loading'?'☁ Cargando…':'☁ Guardar'
           )
         )
       ),
