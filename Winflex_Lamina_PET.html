@@ -522,6 +522,7 @@ function App(){
   const [view,setView] = useState('resumen');
   const [syncStatus,setSyncStatus] = useState('idle'); // idle | saving | ok | error | loading
   const JBIN_ID_KEY = 'winflex_pet_jbin_id';
+  const JBIN_FIXED_ID = '69c5ab55aa77b81da922d618';
 
   // Guardar en localStorage automáticamente
   React.useEffect(()=>{try{localStorage.setItem('winflex_pet_params',JSON.stringify(params));}catch{}},[params]);
@@ -530,10 +531,14 @@ function App(){
   // Cargar desde JSONBin al abrir
   React.useEffect(()=>{
     (async ()=>{
-      const binId = localStorage.getItem(JBIN_ID_KEY);
-      if (!binId) return;
       setSyncStatus('loading');
-      const data = await jbinLoad(JBIN_ID_KEY);
+      let data = null;
+      try {
+        const res = await fetch('https://api.jsonbin.io/v3/b/' + JBIN_FIXED_ID + '/latest', {
+          headers: {'X-Master-Key': JBIN_KEY}, signal: AbortSignal.timeout(10000)
+        });
+        if (res.ok) { const d = await res.json(); data = d.record || null; }
+      } catch(e) {}
       if (data) {
         if (data.params) { const p={...INIT_PARAMS,...data.params}; setParams(p); try{localStorage.setItem('winflex_pet_params',JSON.stringify(p));}catch{} }
         if (data.clients && data.clients.length) { setClients(data.clients); try{localStorage.setItem('winflex_pet_clients_v2',JSON.stringify(data.clients));}catch{} }
@@ -546,13 +551,16 @@ function App(){
   // GUARDAR CAMBIOS — botón manual
   async function guardarCambios() {
     setSyncStatus('saving');
-    const ok = await jbinSave(JBIN_ID_KEY, 'Winflex-PET', {params, clients, pedidos});
-    setSyncStatus(ok?'ok':'error');
-    if (ok) {
-      const newId = localStorage.getItem(JBIN_ID_KEY);
-      if (newId) console.log('WINFLEX PET BIN ID:', newId);
-    }
-    setTimeout(()=>setSyncStatus('idle'), ok?4000:6000);
+    try {
+      const res = await fetch('https://api.jsonbin.io/v3/b/' + JBIN_FIXED_ID, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json','X-Master-Key':JBIN_KEY},
+        body: JSON.stringify({params, clients, pedidos}),
+        signal: AbortSignal.timeout(10000)
+      });
+      setSyncStatus(res.ok?'ok':'error');
+    } catch(e) { setSyncStatus('error'); }
+    setTimeout(()=>setSyncStatus('idle'), 4000);
   }
 
   // ── Tipo de cambio BNA ──
