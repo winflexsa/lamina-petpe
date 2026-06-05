@@ -1,0 +1,32 @@
+{
+  "id": "lamina-petpe",
+  "name": "Lámina: costos y precios por cliente",
+  "short_name": "Lámina",
+  "description": "Costos y precios por cliente de lámina PET y PET/PE — Winflex S.A.",
+  "start_url": ".",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f0f4f8",
+  "theme_color": "#1e9e62",
+  "icons": [
+    {
+      "src": "icon-lamina-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-lamina-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-lamina-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
