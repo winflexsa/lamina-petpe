@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Winflex — Lámina PET</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23185FA5'/%3E%3Ctext x='32' y='47' font-family='Arial Black,Arial' font-weight='900' font-size='40' fill='white' text-anchor='middle'%3EW%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-lamina-192.png">
+<meta name="theme-color" content="#1e9e62">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -13,7 +14,7 @@
   --bg:#fff;--bg2:#f5f5f3;--bg3:#eeede8;
   --text:#1a1a18;--text2:#5f5e5a;--text3:#888780;
   --border:rgba(0,0,0,.10);--border2:rgba(0,0,0,.20);
-  --blue:#185FA5;--blue-dk:#0C447C;--blue-lt:#E6F1FB;--blue-xlt:#f0f7fd;
+  --blue:#1E9E62;--blue-dk:#15663F;--blue-lt:#E8F7EE;--blue-xlt:#EEF9F3;
   --green:#1D9E75;--green-dk:#0F6E56;--green-lt:#E1F5EE;
   --red:#A32D2D;--red-lt:#FCEBEB;
   --amber:#854F0B;--amber-lt:#FAEEDA;
@@ -69,8 +70,8 @@ thead th:hover{color:var(--text)}
 thead th.sorted{color:var(--blue)}
 tbody tr{border-bottom:1px solid var(--border);transition:background .07s;cursor:pointer}
 tbody tr:last-child{border-bottom:none}
-tbody tr:hover{background:#f0f7ff}
-tbody tr.sel{background:#deeeff!important}
+tbody tr:hover{background:#EEF9F3}
+tbody tr.sel{background:#DDF3E6!important}
 td{padding:8px 12px;vertical-align:middle}
 .tr{text-align:right;font-variant-numeric:tabular-nums}
 
@@ -79,7 +80,7 @@ td{padding:8px 12px;vertical-align:middle}
 .b-up{background:var(--green-lt);color:var(--green-dk)}
 .b-down{background:var(--red-lt);color:var(--red)}
 .b-neutral{background:var(--bg2);color:var(--text2)}
-.b-crystal{background:#E6F1FB;color:#0C447C}
+.b-crystal{background:#E8F7EE;color:#15663F}
 
 /* Bar */
 .bar-wrap{display:flex;align-items:center;gap:7px}
@@ -243,13 +244,13 @@ const INIT_PARAMS={
 
 // Tipos disponibles
 const TIPOS={
-  cristal:     {lbl:'rPET Cristal',      color:'#185FA5', bg:'#E6F1FB', base:'cristal'},
+  cristal:     {lbl:'rPET Cristal',      color:'#1E9E62', bg:'#E8F7EE', base:'cristal'},
   virgen:      {lbl:'PET Virgen Ctal',   color:'#0F6E56', bg:'#E1F5EE', base:'virgen'},
   blanco:      {lbl:'rPET Blanco',       color:'#6B4D8A', bg:'#F0E8F8', base:'cristal'},
   blanco_ab:   {lbl:'rPET Blanco AB',    color:'#8A4D6B', bg:'#F8E8F0', base:'cristal'},
   negro:       {lbl:'rPET Negro',        color:'#2C2C2A', bg:'#EAEAE8', base:'cristal'},
   azulino:     {lbl:'rPET Azulino',      color:'#1B6A8C', bg:'#DFF1F8', base:'cristal'},
-  azulino_v:   {lbl:'PET Azulino Virgen',color:'#145A6E', bg:'#D5ECF4', base:'virgen'},
+  azulino_v:   {lbl:'PET Azulino Virgen',color:'#145A6E', bg:'#D6F1E4', base:'virgen'},
   gris:        {lbl:'PET Gris Virgen',   color:'#5A5A58', bg:'#EBEBEA', base:'virgen'},
 };
 
@@ -872,7 +873,7 @@ function App(){
   /* ── COSTOS ── */
   const pctOf=v=>v/costo.total*100;
   const costComps=[
-    {lbl:'Materia Prima',     val:costo.mp_adj,       color:'#185FA5', detail:'Preforma + Scrap, ajustado por merma'},
+    {lbl:'Materia Prima',     val:costo.mp_adj,       color:'#1E9E62', detail:'Preforma + Scrap, ajustado por merma'},
     {lbl:'Energía',           val:costo.energia,      color:'#854F0B', detail:'Costo directo por kg producido'},
     {lbl:'Mano de Obra',      val:costo.mo,            color:'#1D9E75', detail:'Operarios + cargas sociales'},
     {lbl:'Gastos Varios',     val:costo.gastosVarios, color:'#639922', detail:'Gastos generales'},
@@ -963,7 +964,7 @@ function App(){
             C('span',{className:'rbar-rank'},i+1),
             C('span',{className:'rbar-name',title:c.fullName},c.fullName),
             C('div',{className:'rbar-track'},
-              C('div',{className:'rbar-fill',style:{width:c.ganancia/maxG*100+'%',background:['#042C53','#0C447C','#185FA5','#378ADD','#85B7EB'][Math.min(i,4)]}},
+              C('div',{className:'rbar-fill',style:{width:c.ganancia/maxG*100+'%',background:['#093D24','#15663F','#1E9E62','#34B06E','#8FD4AD'][Math.min(i,4)]}},
                 C('span',{className:'rbar-val'},'U$D '+cu(c.ganancia))
               )
             )
@@ -977,7 +978,7 @@ function App(){
             C('span',{className:'rbar-rank'},''),
             C('span',{className:'rbar-name'},c.fullName),
             C('div',{className:'rbar-track',style:{position:'relative'}},
-              C('div',{style:{position:'absolute',top:0,left:0,height:'100%',background:'#b5d4f4',width:c.costoKg/5*100+'%',borderRadius:4}}),
+              C('div',{style:{position:'absolute',top:0,left:0,height:'100%',background:'#C2E8D3',width:c.costoKg/5*100+'%',borderRadius:4}}),
               C('div',{style:{position:'absolute',top:0,left:0,height:'100%',background:'var(--green)',opacity:.85,width:c.pventa/5*100+'%',borderRadius:4,display:'flex',alignItems:'center',justifyContent:'flex-end',paddingRight:5}},
                 C('span',{style:{fontSize:10,color:'white',fontVariantNumeric:'tabular-nums'}},cu(c.pventa))
               )
@@ -1079,7 +1080,7 @@ function App(){
           const cl=computed.find(c=>c.id===Number(pedForm.clienteId));
           const kg=parseFloat(pedForm.kg)||0,pr=parseFloat(pedForm.precioUSD)||0;
           const gan=pr-(cl?.costoKg||0);
-          return C('div',{style:{background:'var(--blue-lt)',border:'1px solid #B5D4F4',borderRadius:'var(--r)',padding:'7px 12px',marginBottom:10,fontSize:12,color:'var(--blue-dk)',display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:4}},
+          return C('div',{style:{background:'var(--blue-lt)',border:'1px solid #C2E8D3',borderRadius:'var(--r)',padding:'7px 12px',marginBottom:10,fontSize:12,color:'var(--blue-dk)',display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:4}},
             C('div',null,C('strong',null,'Monto: '),'U$D '+cu(pr*kg)),
             C('div',null,C('strong',null,'Ganancia: '),C('span',{style:{color:gan>0?'var(--green-dk)':'var(--red)'}},'U$D '+cu(gan*kg))),
             C('div',null,C('strong',null,'Margen: '),fp(pr>0?gan/pr*100:0))
@@ -1218,7 +1219,7 @@ function App(){
             Object.entries(TIPOS).map(([k,t])=>C('option',{key:k,value:k},t.lbl))
           )
         ),
-        C('div',{style:{background:'var(--blue-lt)',border:'1px solid #B5D4F4',borderRadius:'var(--r)',padding:'10px 14px',marginBottom:12,fontSize:12,color:'var(--blue-dk)'}},
+        C('div',{style:{background:'var(--blue-lt)',border:'1px solid #C2E8D3',borderRadius:'var(--r)',padding:'10px 14px',marginBottom:12,fontSize:12,color:'var(--blue-dk)'}},
           (()=>{
             const t=TIPOS[nuevoForm.tipo||'cristal']||TIPOS.cristal;
             const cd=calcCostoTipo(nuevoForm.tipo||'cristal',params);
@@ -1436,7 +1437,7 @@ function App(){
       ),
       C('div',{className:'sidebar-foot'},
       C('button',{
-        style:{width:'100%',padding:'6px',marginBottom:8,background:'var(--blue-lt)',border:'1px solid #B5D4F4',borderRadius:'var(--r)',fontSize:11,fontWeight:700,color:'var(--blue)',cursor:'pointer'},
+        style:{width:'100%',padding:'6px',marginBottom:8,background:'var(--blue-lt)',border:'1px solid #C2E8D3',borderRadius:'var(--r)',fontSize:11,fontWeight:700,color:'var(--blue)',cursor:'pointer'},
         onClick:guardarCambios
       },'☁ Guardar cambios'),
         C('div',null,computed.filter(cl=>cl.pventa>0).length+' clientes con precio'),

@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Winflex — Lámina PET/PE</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23185FA5'/%3E%3Ctext x='32' y='47' font-family='Arial Black, Arial' font-weight='900' font-size='40' fill='white' text-anchor='middle'%3EW%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-lamina-192.png">
+<meta name="theme-color" content="#1e9e62">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -13,7 +14,7 @@
   --bg:   #ffffff; --bg2: #f5f5f3; --bg3: #eeede8; --bg4: #e8e7e2;
   --text: #1a1a18; --text2: #5f5e5a; --text3: #888780;
   --border: rgba(0,0,0,0.10); --border2: rgba(0,0,0,0.20);
-  --blue: #185FA5; --blue-dk: #0C447C; --blue-lt: #E6F1FB; --blue-xlt: #f0f7fd;
+  --blue: #1E9E62; --blue-dk: #15663F; --blue-lt: #E8F7EE; --blue-xlt: #EEF9F3;
   --green: #1D9E75; --green-dk: #0F6E56; --green-lt: #E1F5EE; --green-xlt: #f0faf6;
   --red: #A32D2D; --red-lt: #FCEBEB;
   --amber: #854F0B; --amber-lt: #FAEEDA;
@@ -72,8 +73,8 @@ thead th:hover{color:var(--text)}
 thead th.sorted{color:var(--blue)}
 tbody tr{border-bottom:1px solid var(--border);transition:background .07s;cursor:pointer}
 tbody tr:last-child{border-bottom:none}
-tbody tr:hover{background:#f0f7ff}
-tbody tr.sel{background:#deeeff!important}
+tbody tr:hover{background:#EEF9F3}
+tbody tr.sel{background:#DDF3E6!important}
 td{padding:9px 12px;vertical-align:middle}
 .tr{text-align:right}
 .tnr{font-variant-numeric:tabular-nums;text-align:right}
@@ -378,7 +379,7 @@ const fp  = n => Number(n).toFixed(1)+'%';
 const fpu = n => (n>=0?'+':'')+fp(n);
 const today = () => new Date().toISOString().slice(0,10);
 const GP=['#0F6E56','#1D9E75','#27500A','#3B6D11','#639922','#97C459','#C0DD97'];
-const BP=['#042C53','#0C447C','#185FA5','#378ADD','#85B7EB','#B5D4F4'];
+const BP=['#093D24','#15663F','#1E9E62','#34B06E','#8FD4AD','#C2E8D3'];
 
 /* ═══════════════════ EXPORT ════════════════════════════════════════════ */
 function exportXLS(computed, params) {
@@ -779,17 +780,17 @@ function App() {
     (() => {
       const lam = calcLaminado(params);
       const comps = [
-        {lbl:'MP Adhesivos',   val:lam.lam_mp,      color:'#185FA5'},
+        {lbl:'MP Adhesivos',   val:lam.lam_mp,      color:'#1E9E62'},
         {lbl:'MO Laminado',    val:lam.lam_mo,      color:'#1D9E75'},
         {lbl:'Energía Lam.',   val:lam.lam_energia, color:'#854F0B'},
         {lbl:'Otros Lam.',     val:lam.lam_otros,   color:'#888780'},
-        {lbl:'MO Refilado',    val:lam.ref_mo,      color:'#0C447C'},
+        {lbl:'MO Refilado',    val:lam.ref_mo,      color:'#15663F'},
         {lbl:'Energía Ref.',   val:lam.ref_energia, color:'#639922'},
         {lbl:'Otros Ref.',     val:lam.ref_otros,   color:'#B4B2A9'},
       ].filter(x=>x.val>0);
       return React.createElement('div',{style:{background:'var(--bg)',border:'1px solid var(--border)',borderRadius:'var(--rl)',marginBottom:14,overflow:'hidden'}},
         React.createElement('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:0,borderBottom:'1px solid var(--border)'}},
-          React.createElement('div',{style:{padding:'14px 18px',background:'#0C447C',color:'#fff'}},
+          React.createElement('div',{style:{padding:'14px 18px',background:'#15663F',color:'#fff'}},
             React.createElement('div',{style:{fontSize:11,opacity:.7,marginBottom:2}},'LAMINADO — costo total'),
             React.createElement('div',{style:{fontSize:22,fontWeight:800,fontVariantNumeric:'tabular-nums'}},'U$D '+f2u(lam.lam_total)+'/kg'),
             React.createElement('div',{style:{marginTop:6,fontSize:11,opacity:.8,lineHeight:1.7}},
@@ -900,7 +901,7 @@ function App() {
             React.createElement('span',{className:'rbar-rank'},''),
             React.createElement('span',{className:'rbar-name'},c.name),
             React.createElement('div',{className:'rbar-track',style:{position:'relative'}},
-              React.createElement('div',{style:{position:'absolute',top:0,left:0,height:'100%',background:'#b5d4f4',width:c.costoKg/4.5*100+'%',borderRadius:4}}),
+              React.createElement('div',{style:{position:'absolute',top:0,left:0,height:'100%',background:'#C2E8D3',width:c.costoKg/4.5*100+'%',borderRadius:4}}),
               React.createElement('div',{style:{position:'absolute',top:0,left:0,height:'100%',background:'var(--green)',opacity:.85,width:c.pVenta/4.5*100+'%',borderRadius:4,display:'flex',alignItems:'center',justifyContent:'flex-end',paddingRight:6}},
                 React.createElement('span',{style:{fontSize:10,color:'#fff',fontVariantNumeric:'tabular-nums',fontWeight:700}},f2(c.pVenta))
               )
@@ -1213,7 +1214,7 @@ function App() {
           const cl=computed.find(c=>c.id===Number(pedForm.clienteId));
           const kg=parseFloat(pedForm.kg)||0, pr=parseFloat(pedForm.precioUSD)||0;
           const gan=pr-(cl?.costoKg||0);
-          return C('div',{style:{background:'var(--blue-lt)',border:'1px solid #B5D4F4',borderRadius:'var(--r)',padding:'8px 12px',marginBottom:10,fontSize:12,color:'var(--blue-dk)',display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:4}},
+          return C('div',{style:{background:'var(--blue-lt)',border:'1px solid #C2E8D3',borderRadius:'var(--r)',padding:'8px 12px',marginBottom:10,fontSize:12,color:'var(--blue-dk)',display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:4}},
             C('div',null,C('strong',null,'Monto: '),'U$D '+f2u(pr*kg)),
             C('div',null,C('strong',null,'Ganancia: '),C('span',{style:{color:gan>0?'var(--green-dk)':'var(--red)'}},'U$D '+f2u(gan*kg))),
             C('div',null,C('strong',null,'Margen: '),fp(pr>0?gan/pr*100:0))
@@ -1673,7 +1674,7 @@ function App() {
           )
         ),
 
-        nuevoPreview && nuevoForm.pventa && C('div', {style:{background:'var(--blue-lt)',border:'1px solid #B5D4F4',borderRadius:'var(--r)',padding:'8px 12px',marginBottom:10,fontSize:12,color:'var(--blue-dk)',display:'flex',gap:16}},
+        nuevoPreview && nuevoForm.pventa && C('div', {style:{background:'var(--blue-lt)',border:'1px solid #C2E8D3',borderRadius:'var(--r)',padding:'8px 12px',marginBottom:10,fontSize:12,color:'var(--blue-dk)',display:'flex',gap:16}},
           (()=>{
             const pv = parseFloat(nuevoForm.pventa)||0;
             const gan = pv - nuevoPreview.costoKg;
@@ -1762,7 +1763,7 @@ function App() {
       ),
       React.createElement('div',{className:'sidebar-foot'},
         React.createElement('button',{
-          style:{width:'100%',padding:'6px',marginBottom:8,background:'var(--blue-lt)',border:'1px solid #B5D4F4',borderRadius:'var(--r)',fontSize:11,fontWeight:700,color:'var(--blue)',cursor:'pointer'},
+          style:{width:'100%',padding:'6px',marginBottom:8,background:'var(--blue-lt)',border:'1px solid #C2E8D3',borderRadius:'var(--r)',fontSize:11,fontWeight:700,color:'var(--blue)',cursor:'pointer'},
           onClick:guardarCambios
         },'☁ Guardar cambios'),
         React.createElement('div',null,'15 clientes activos'),
